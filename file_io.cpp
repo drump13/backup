@@ -1,0 +1,205 @@
+#include "file_io.h"
+
+
+/*
+@brief LCMに渡すファイルを生成する
+@param RG-Treeを走査して得られたitem_vectorのvector
+@detail
+occurrenceのvectorにするためにまずは2次元配列の行と列を入れ替える操作を行う
+*/
+void write_file_to_item_transactions(vector<vector<int>> tr){
+  vector<vector<int>> transactions = convert(tr);
+  
+  ofstream output_file(EXCHANGE_OUT_FILE);
+  
+  for(int i = 0,n=transactions.size(); i<n;i++){
+    for(int j =0,m=transactions[i].size();j<m;j++){
+      output_file << transactions[i][j] << " ";
+    }
+    output_file << "\n";
+  }
+  output_file.close();
+}
+
+vector<string> read_tree_db(){
+  vector<string> result;
+  //todo
+  
+
+  return result;
+}
+
+/*
+@brief LCMの結果を読むための関数
+ */
+vector<vector<int>> read_result_of_lcm(){
+  vector<vector<int>> result;
+  ifstream ifs(EXCHANGE_IN_FILE);
+  if(ifs.fail()){
+    cerr << "file input is failed" << endl;
+  }
+  string s;
+  int i = 0;
+  while(getline(ifs,s)){
+    ++i;
+    if(i%2 != 1){
+      continue;
+    }
+    vector<string> sv = split(s,' ');
+    if(sv.size() == 0){continue;}
+    vector<int> current;
+    for(int j = 1 ,m = sv.size();j<m;j++){
+      current.push_back(stoi(sv[j]));
+    }
+    sort(current.begin(),current.end());
+    result.push_back(current);
+  }
+
+  return result;
+}
+
+/*
+@brief LCMの結果をDB.txtから読む
+@param min_sup
+@return CP occ_list,idlistのペア
+@detail occがmin_sup以下のclosed-patternを無視する
+ */
+vector<CP*> read_CP_from_LCM_result(int min_sup){
+  ifstream ifs(EXCHANGE_IN_FILE);
+  if(ifs.fail()){
+    cerr << "file input is failed" << endl;
+  }
+  string s;
+  int i = 0;
+  bool skip_flag = false;
+  vector<vector<int>> occ_lists;
+  vector<vector<int>> id_lists;
+  while(getline(ifs,s)){
+    ++i;
+    vector<string> sv = split(s,' ');
+    if(sv.size() == 0){continue;}
+    
+    if(i%2 == 1){
+      if(stoi(sv[0]) < min_sup){
+	skip_flag = true;
+	continue;
+      }
+
+      vector<int> current;
+
+      for(int j = 1,m = sv.size();j<m;j++){
+	current.push_back(stoi(sv[j]));
+      }
+
+      sort(current.begin(),current.end());
+      occ_lists.push_back(current);
+
+    }else{
+      if(skip_flag){
+	skip_flag = false;
+	continue;
+      }
+      vector<int> current;
+      for(int j = 1 ,m = sv.size();j<m;j++){
+	current.push_back(stoi(sv[j]));
+      }
+      sort(current.begin(),current.end());
+      id_lists.push_back(current);
+
+    }
+  }
+  vector<CP*> result;
+  for(int i = 0,n = id_lists.size() ; i < n ;i++){
+    CP* cp = new CP(id_lists[i],occ_lists[i]);
+    result.push_back(cp);
+  }
+  return result;
+  
+}
+//@debug
+void print_CP(CP* cp){
+    cout << "[";
+    for(int i = 0, n =cp->id_list.size();i<n;i++){
+      cout << cp->id_list[i]<< ",";
+    }
+    cout << "]:{";
+    for(int i = 0 ,n= cp->occ_list.size();i<n;i++){
+      cout << cp->occ_list[i] << ",";
+    }
+    cout << "}" << endl;
+  }
+  //debug
+  void print_CP_list(vector<CP*> cp_list){
+    for(int i = 0,n=cp_list.size() ; i < n ; i++){
+      cout << "---"<<endl;
+      print_CP(cp_list[i]);
+    }
+  }
+
+void write_final_result(vector<EnumerationTree*> result){
+  ofstream output_file(OUTPUT_FILE);
+  for(int i = 0,n=result.size(); i<n;i++){
+    output_file << result[i]->get_tree_string();
+    output_file << "\n";
+  }
+  output_file.close();
+  
+  //todo
+} 
+
+/*
+cs_logs専用のリーダー
+cs_logs.ascの最初の2要素がtree_idであることに注意
+ */
+vector<string> read_cslogs(){
+  ifstream input_file(CS_LOGS);
+  if(input_file.fail()){
+    cerr << "file input is failed" << endl;
+  }
+  string s;
+  vector<string> result;
+  while(getline(input_file,s)){
+    vector<string> sv = split(s,' ');
+    result.push_back(to_csstr(sv));
+  }
+  return result;
+}
+
+
+string to_csstr(vector<string> sv){
+  string result="";
+  for(int i = 3,n = sv.size();i<n;i++){
+    result += sv[i]+" "; 
+  }
+  return result;
+}
+
+/*
+  @brief 2次元配列の行と列を入れ替える
+ */
+vector<vector<int>> convert(vector<vector<int>> transaction){
+    vector<vector<int>> result;
+    for(int j = 0,m = transaction[0].size();j<m;j++){
+      vector<int> v;
+      v.push_back(0);
+      result.push_back(v);
+    }
+    for(int i = 1 , n=transaction.size();i<n;i++){
+      for(int j =0, m = transaction[i].size();j<m;j++){
+	result[transaction[i][j]].push_back(i);
+      }
+    }
+    //    print_vvi(result);
+    return result;
+}
+
+//debug
+void print_vvi(vector<vector<int>> vvi){
+    cout << "print vector vector int" << endl;
+    for(int i = 0,n = vvi.size();i<n;i++){
+      for(int j = 0,m = vvi[i].size();j<m;j++){
+	cout << vvi[i][j] << "," ;
+      }
+      cout << endl;
+    }
+}

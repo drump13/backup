@@ -1,0 +1,225 @@
+#include <iostream>
+#include <vector>
+#include "tree.h"
+#include "file_io.h"
+extern "C"{
+  #include "lcm.h"
+}
+
+
+/*
+item_id : LCMをかける時のtransaction idのこと
+path : constrained-treeの根ノードから該当ノードへのpath
+       根までと根からのノードの列の間に-1を挟む.
+       p_label1 p_label2 p_label3 -1 clabel1 clabel2 clabel3
+occurrence_id_list : constrained-treeのoccurrence_listのidを持つ
+　　　　　　　　　　LCMをかける時のitemのこと 
+*/
+struct PathItem{
+  int item_id;
+  string path;
+  vector<int> occurrence_id_list;
+  PathItem(string p,vector<int> id_list):item_id(0),path(p),occurrence_id_list(id_list){}
+};
+/*
+PathItem* make_new_path_item(string path,vector<int> oc_id_list){
+  PathItem* pi = new PathItem(path);
+  
+  //  pi->path = path;
+  pi->occurrence_id_list = oc_id_list;
+
+  cout << "path:" << path <<endl;
+  cout << "pi->path:" << pi->path << endl;
+}
+*/
+/*
+bool is_parent_label_frequent(int label,vector<Tree*> occ_tr,int min_sup){
+  int count = 0;
+  for(int i = 0, n = occ_tr.size() ; i < n ;i++){
+    if(occ_tr[i]->get_parent() != NULL){
+      count += (label == occ_tr[i]->get_parent()->get_node()->label)? 1:0;
+    }
+  }
+  return count >= min_sup; 
+
+  }*/
+
+vector<int> get_next_parent_ids(int label,vector<int> ids, vector<Tree*> tv){
+  vector<int> next_ids;
+  for(int i = 0, n = ids.size() ; i < n ; i ++){
+    Tree* t = tv[ids[i]];
+    if(t->get_parent() != NULL && t->get_parent()->get_node()->label == label){
+      next_ids.push_back(ids[i]);
+    }
+  }
+  return next_ids;
+}
+
+vector<int> get_next_child_ids(int label,vector<int> ids, vector<Tree*> tv){
+  vector<int> next_ids;
+  for(int i = 0,n = ids.size() ; i < n;i++){
+    Tree* t = tv[ids[i]]->get_child(label);
+    if(t != NULL){
+      next_ids.push_back(ids[i]);
+    }
+  }
+  return next_ids;
+  
+}
+
+
+vector<Tree*> get_copy_of_occurrence_transactions(vector<Tree*> oc_tr){
+  vector<Tree*> copy;
+  for(int i =0, n = oc_tr.size(); i < n ; i++){
+    copy.push_back(oc_tr[i]);
+  }
+  return copy;
+}
+
+vector<Tree*> get_next_parent_occurrence_transactions(vector<Tree*> oc_tr,vector<int> id_list){
+  vector<Tree*> result;
+  for(int i = 0 ,n = oc_tr.size(); i < n ;i++){
+    if(find(id_list.begin(),id_list.end(),i) != id_list.end()){
+      result.push_back(oc_tr[i]->get_parent());
+    }else{
+      result.push_back(oc_tr[i]);
+    }
+  }
+  return result;
+}
+
+vector<Tree*> get_next_child_occurrence_transactions(vector<Tree*> oc_tr,vector<int> id_list,int label){
+  vector<Tree*> result;
+  for(int i = 0,n = oc_tr.size() ; i < n ; i++){
+    if(find(id_list.begin(),id_list.end(),i) != id_list.end()){
+      result.push_back(oc_tr[i]->get_child(label));
+    }else{
+      result.push_back(oc_tr[i]);
+    }
+  }
+  return result;
+}
+
+vector<int> make_initial_id_list(vector<Tree*> oc){
+  vector<int> id_list;
+  for(int i = 0,n = oc.size() ; i < n; i++ ){
+    id_list.push_back(i);
+  }
+  return id_list;
+}
+
+
+//debug
+void print_path_item_vector(vector<PathItem*> pi){
+  for(int i = 0 , n = pi.size();i < n ; i++){
+    cout << (pi[i]->path) << ":";
+    for(int j = 0,m = pi[i]-> occurrence_id_list.size(); j < m;j++){
+      cout << pi[i]->occurrence_id_list[j] << ",";
+    }
+    cout << endl;
+    
+  }
+}
+
+
+/*
+頻出なパスのid_listのtransactionを作る.
+occurrence_transactionの数は減らさずに見ているidのリストを減らす
+そのid_リストをtransactionとしてLCMに渡すためにリストにして列挙
+ */
+vector<PathItem*> make_transactions(vector<Tree*> occurrence_transactions,vector<int> ids,string current_path,int min_sup){
+  vector<PathItem*> transactions;
+  //  PathItem* pi = make_new_path_item(current_path,ids);
+  PathItem* pi = new PathItem(current_path,ids);
+  transactions.push_back(pi);
+  set<int> next_parent_label;
+  set<int> next_child_label;
+  //make parent label set and child label set
+  for(int i = 0 , n = ids.size();i<n;i++){
+    Tree* t = occurrence_transactions[ids[i]];
+    if(t -> get_parent() != NULL){
+      next_parent_label.insert(t->get_parent()->get_node()->label);
+    }
+    for(int k = 0, l = t->get_children().size();k<l;k++){
+      next_child_label.insert(t->get_children()[k]->get_node()->label);
+    }
+  }
+  
+  
+  //親のラベルについてアイテムを再帰的に生成
+  for(auto itr : next_parent_label){
+    if(current_path.find("-1") != string::npos) break;
+    vector<int> next_ids  = get_next_parent_ids(itr,ids,occurrence_transactions);
+    if(next_ids.size() >= min_sup){
+      vector<Tree* > next_parent_occ = get_next_parent_occurrence_transactions(occurrence_transactions,next_ids);
+      string next_path = current_path + " " + to_string(itr) ;
+      vector<PathItem*> res = make_transactions(next_parent_occ,next_ids,next_path,min_sup);
+      transactions.insert(transactions.end(),res.begin(),res.end());
+    }
+  }
+
+  //子のラベルについてアイテムを再帰的に生成
+  for(auto itr: next_child_label){
+    vector<int> next_ids = get_next_child_ids(itr,ids,occurrence_transactions);
+    if(next_ids.size() >= min_sup){
+      vector<Tree*> next_child_occ = get_next_child_occurrence_transactions(occurrence_transactions,next_ids,itr);
+      string next_path = (current_path.find("-1") == string::npos) ? current_path + " -1 " +to_string(itr) : current_path + " " + to_string(itr); 
+      vector<PathItem*> res = make_transactions(next_child_occ,next_ids,next_path,min_sup);
+      transactions.insert(transactions.end(),res.begin(),res.end());
+    }
+  }
+  return transactions;
+}
+
+vector<vector<int>> to_transaction_db(vector<PathItem*> piv,int max_transaction_num){
+  vector<vector<int>> result;
+  /*  for(int i = 0, n= piv.size() ; i < n ; i++){
+    vector<int> for_lcm_transaction;
+    for(int j = 0 ,m = piv[i]->occurrence_id_list.size(); j < m ; j++){
+      for_lcm_transaction.push_back(piv[i]->occurrence_id_list[j] +1);
+    }
+    result.push_back(for_lcm_transaction);
+    }*/
+  for(int i = 0;i<max_transaction_num;i++){
+    vector<int> for_lcm_transaction;
+    for(int j = 0,m = piv.size();j<m;j++){
+      vector<int> c = piv[j]->occurrence_id_list;
+      if(find(c.begin(),c.end(),i) != c.end()){
+	for_lcm_transaction.push_back(piv[j]->item_id);
+      }
+    }
+    result.push_back(for_lcm_transaction);
+  }
+  
+  return result;
+}
+
+
+void set_path_item_id(vector<PathItem*> piv){
+  for(int i=0,n = piv.size();i<n;i++){
+    //lcmの都合上item_idは1から始める
+    piv[i]->item_id = i+1;
+  }
+
+}
+
+
+
+
+vector<EnumerationTree*> SCC_Path_Miner(TreeDB* db,EnumerationTree* constrainedTree,int minimum_support){
+  vector<Tree*> oc_list = db->get_subtree_list(constrainedTree);
+  vector<int> id_list = make_initial_id_list(oc_list);
+  vector<PathItem*> piv = make_transactions(oc_list,id_list,to_string(constrainedTree->get_node()->label),minimum_support);
+  set_path_item_id(piv);
+  vector<vector<int>> transaction_db = to_transaction_db(piv,oc_list.size());
+
+  write_file_to_item_transactions(transaction_db);
+  cout <<" minimum support is " << minimum_support << endl;
+  Mine_Closed_Itemsets(minimum_support);
+  cout << "after LCM" << endl;
+  vector<vector<int>> result_of_lcm = read_result_of_lcm();
+  cout << "after read LCM result" << endl;
+  
+  vector<EnumerationTree* > result;
+  return result;
+}

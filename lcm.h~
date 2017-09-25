@@ -1,0 +1,526 @@
+/* Linear time Closed itemset Miner for Frequent Itemset Mining problems */
+/* 2004/4/10 Takeaki Uno,   e-mail:uno@nii.jp, 
+    homepage:   http://research.nii.ac.jp/~uno/index.html  */
+/* This program is available for only academic use, basically.
+   Anyone can modify this program, but he/she has to write down 
+    the change of the modification on the top of the source code.
+   Neither contact nor appointment to Takeaki Uno is needed.
+   If one wants to re-distribute this code, do not forget to 
+    refer the newest code, and show the link to homepage of 
+    Takeaki Uno, to notify the news about LCM for the users.
+   For the commercial use, please make a contact to Takeaki Uno. */
+
+
+#ifndef _lcm_h_
+#define _lcm_h_
+
+#include<time.h>
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+
+/* expanding array  */
+typedef struct {
+  void *h;
+  int unit;
+  int num;
+  int end;
+  int dellist; 
+} ARY;
+
+#define ARY_CELL(a,b,c) ((a *)((int*)(b).h+((b).unit*c)))
+
+/* structure for integer queue */
+typedef struct {
+  int s;
+  int t;
+  int end;
+  int *q;
+} QUEUE;
+
+#define QUEUE_INT int
+
+extern time_t LCM_start_time;
+extern int LCM_maximum_time;
+extern int LCM_iters;
+extern int LCM_pruned_iters;
+extern int LCM_prepruned_iters;
+extern char *LCM_input_file;
+extern char *LCM_output_file;
+extern char *LCM_weight_file;
+extern FILE *LCM_fp;
+
+/// for shrink **/
+extern int *LCM_shrink_p; 
+extern QUEUE LCM_shrink_jump;
+extern QUEUE LCM_shrink_jump1;
+extern QUEUE LCM_shrink_jump2; 
+extern int *LCM_shrink_result;
+extern int **LCM_shrink_shift;
+extern int LCM_sig_siz;
+
+extern int *LCM_perm;
+extern int LCM_perm2[32];
+extern int *LCM_trsact_perm;
+extern int LCM_Eend;
+extern int LCM_frq;
+extern int *LCM_maxfreq;
+extern int LCM_th;
+extern int LCM_upth;
+extern int LCM_itemset_ub;
+extern int LCM_itemset_lb;
+extern QUEUE LCM_jump;
+extern QUEUE LCM_add;
+extern QUEUE LCM_itemset;
+extern QUEUE *LCM_added;
+extern QUEUE_INT *LCM_buf;
+extern QUEUE_INT *LCM_buf2;
+extern ARY LCM_Trsact;
+extern ARY LCM_Occ; 
+
+extern int LCM_Trsact_itemnum;
+extern int LCM_Trsact_num;
+extern int LCM_Trsact_weight; 
+extern int LCM_database_siz; 
+extern int LCM_maxTrsact_siz;
+extern int LCM_maxTrsact_siz_org;
+extern int LCM_shrink_maxocc;
+extern int LCM_shrink_maxbuf;
+extern int LCM_buf_siz;
+
+extern QUEUE *LCM_occ; 
+extern QUEUE *LCM_trsact; 
+extern int *LCM_sc;    
+extern int LCM_problem;
+extern int LCM_full_flag;
+
+/** for fast ppc check **/
+extern int *LCMV_trsact;
+#define LCMV_HIGHBIT 0x80000000
+QUEUE LCM_Qand;
+
+#define LCM_FREQSET 1
+#define LCM_CLOSED  2
+#define LCM_MAXIMAL 3
+
+
+extern int LCM_BM_space;
+extern int *LCM_BM_weight;
+extern char *LCM_BM_highbit;
+extern int LCM_BM_MAXITEM;
+extern int LCM_BM_prefix_max;
+extern int *LCM_BM_prefix;
+extern int LCM_BITMAP;
+extern int LCM_SIG_ON_TRSACT;
+extern int LCM_iters2;
+extern int LCM_iters3;
+
+extern int LCM_print_flag;
+
+#define MAX(a,b)      ((a)>(b)?a:b)
+#define MIN(a,b)      ((a)<(b)?a:b)
+#define ENMAX(a,b)      if((a)<(b))(a)=(b)
+#define ENMIN(a,b)      if((a)>(b))(a)=(b)
+
+#define   malloc2(f,a,b,c)     if(!(f=(a *)malloc(sizeof(a)*(b)))){printf("memory error %s",c);exit(1);}
+#define   realloc2(f,a,b,c)     if(!(f=(a *)realloc(f,sizeof(a)*(b)))){printf("memory error, %s\n",c);exit(1);}
+#define  free2(a)      {if(a){free(a);(a)=NULL;}a=0;}
+
+#define   fopen2r(f,a,c)     if(!(f=fopen(a,"r"))){printf("%s:file open error %s\n",c,a);exit(1);}
+#define   fopen2w(f,a,c)     if(!(f=fopen(a,"w"))){printf("%s:file open error %s\n",c,a);exit(1);}
+
+extern int BITMASK_UPPER1[32];
+extern int BITMASK_UPPER1_[32];
+
+extern int BITMASK_LOWER1[32] ;
+extern int BITMASK_LOWER1_[32];
+
+extern int BITMASK_1[32];
+extern int BITMASK_31[32] ;
+
+#define MAX(a,b)      ((a)>(b)?a:b)
+#define MIN(a,b)      ((a)<(b)?a:b)
+#define ENMAX(a,b)      if((a)<(b))(a)=(b)
+#define ENMIN(a,b)      if((a)>(b))(a)=(b)
+
+#define   malloc2(f,a,b,c)     if(!(f=(a *)malloc(sizeof(a)*(b)))){printf("memory error %s",c);exit(1);}
+#define   realloc2(f,a,b,c)     if(!(f=(a *)realloc(f,sizeof(a)*(b)))){printf("memory error, %s\n",c);exit(1);}
+#define  free2(a)      {if(a){free(a);(a)=NULL;}a=0;}
+
+#define   fopen2r(f,a,c)     if(!(f=fopen(a,"r"))){printf("%s:file open error %s\n",c,a);exit(1);}
+#define   fopen2w(f,a,c)     if(!(f=fopen(a,"w"))){printf("%s:file open error %s\n",c,a);exit(1);}
+
+
+/* swap's */
+int swap_tmp_int;
+double swap_tmp_double;
+char swap_tmp_char;
+void *swap_tmp_pointer;
+#define SWAP_INT(a,b)  (swap_tmp_int=a,a=b,b=swap_tmp_int)
+#define SWAP_DOUBLE(a,b)  (swap_tmp_double=a,a=b,b=swap_tmp_double)
+#define SWAP_CHAR(a,b)  (swap_tmp_char=a,a=b,b=swap_tmp_char)
+#define SWAP_PNT(a,b)  (swap_tmp_pointer=(void *)a,a=b,b=swap_tmp_pointer)
+
+/* macros for QUEUE operation */
+#define QUEUE_LENGTH(Q) ((Q).t-(Q).s)
+#define QUEUE_F_LOOP_(Q,i)  for((i)=(Q).s;(i)<(Q).t;(i)++)
+#define QUEUE_FE_LOOP_(Q,i,x)  for((i)=(Q).s,x=(Q).q[i];(i)<(Q).t;(i)++,x=(Q).q[i])
+#define QUEUE_B_LOOP_(Q,i)  for((i)=(Q).t-1;(i)>=(Q).s;(i)--)
+#define QUEUE_BE_LOOP_(Q,i,x)  for((i)=(Q).t-1,x=(Q).q[i];(i)>=(Q).s;(i)--,x=(Q).q[i])
+#define QUEUE_RMALL(Q) ((Q).t=(Q).s)
+#define QUEUE_RMALL_(Q) ((Q).t=0)
+
+
+/* constants for bit mask */
+
+
+#define LCMINT int
+extern int FILE_err;
+
+#define FILE2_BUFSIZ 4096
+
+typedef struct {
+  char err;
+  char *buf;
+  char *p;
+  char *p_end;
+  FILE *fp;
+} FILE2;
+
+void initialize(void);
+
+/***************************************/
+/* read an integer from the given file */
+/***************************************/
+int file_read_int (FILE *fp);
+
+/*******************************************************/
+/* read an integer writen by charactors from memory    */
+/* RETURN: number read from memory                     */
+/* set err to 1:gets newline, 2:gets end position, err&4:if none is read */
+/*******************************************************/
+int intarray_read_int (char **p, char *p_end, char *err);
+
+/* read characters from memory until number appears **/
+/* RETURN: 0:gets number, 2:gets end position, 1:gets newline */
+int intarray_read_gap (char **p, char *p_end);
+
+
+/**************************************************************************/
+/**************************************************************************/
+/**************************************************************************/
+void FILE2_read_open (FILE2 *fp2, char *fname);
+void FILE2_close ( FILE2 *fp2 );
+
+void FILE2_read_buffer (FILE2 *fp2);
+
+int FILE2_read_int ( FILE2 *fp2 );
+
+/**********************************************************************/
+/**********************************************************************/
+/**********************************************************************/
+/**********************************************************************/
+/**********************************************************************/
+
+/* allocate integer array and set value */
+int *intarray_malloc_const ( int end, int c );
+/* quick sort of integers and its relationship function */
+int qsort_int_cmp ( const void *x, const void *y );
+int qsort_int_cmp_ ( const void *x, const void *y );
+void qsort_int ( int *a, int siz );
+void qsort_int_ ( int *a, int siz );
+void qsort_int_struct ( int *a, int siz, int unit, int flag );
+void qsort_int2 ( int *a, int siz );
+void qsort_int2_ ( int *a, int siz );
+
+
+/* give an identical permutation */
+int *init_perm ( int end );
+/* give an inverse of a permutation */
+int *inverse_perm ( int *perm, int end );
+/* permute array of struct according to permutation */
+void perm_struct ( void *a, int unit, int *perm, int siz );
+/* radix sort */
+int *radix_sort ( void *a, int siz, int unit, int mm, int m, int *perm, int flag );
+
+
+/**********************************************************************/
+/**********************************************************************/
+/**********************************************************************/
+/**********************************************************************/
+/**********************************************************************/
+
+void QUEUE_print_ ( QUEUE *Q );
+/* initialize QUEUE structure */
+void QUEUE_init ( QUEUE *Q, int siz );
+/* free QUEUE */
+void QUEUE_end ( QUEUE *Q );
+/* insert an element to the end of QUEUE */
+void QUEUE_ins_ ( QUEUE *Q, int e );
+QUEUE_INT QUEUE_ext_tail_ ( QUEUE *Q );
+
+void QUEUE_sort_ ( QUEUE *Q );
+void QUEUE_sortr_ ( QUEUE *Q );
+
+/*******************************************************/
+
+void ARY_exp ( ARY *A, int num );
+
+void ARY_inc ( ARY *A );
+
+void ARY_exp_const ( ARY *A, int num, int c );
+
+void ARY_init ( ARY *A, int unit );
+void ARY_end ( ARY *A );
+
+void ARY_del ( ARY *A, int num );
+
+void ARY_rm ( ARY *A, int num );
+
+int ARY_new ( ARY *A );
+
+/***********************************/
+/*   print transactions            */
+/***********************************/
+void TRSACT_print ( ARY *T );
+
+/***********************************/
+/*   print subset of transactions  */
+/***********************************/
+void TRSACT_subprint ( ARY *T, QUEUE *occ );
+
+/***********************************/
+/* count items and transactions in the given file */
+/* input: filename */
+/* output: counters for items, #transactions */
+/* .dellist := total number of integers in the file */
+/* set *Tnum to the number of transactions (!= #newlines) */
+/* set *maxT to max. size of a transaction (=max.{#intergers in a line}) */
+/***********************************/
+ARY TRSACT_file_count ( char *fname, int *Tnum, int *maxT);
+
+/***********************************/
+/* sort indices of frequent items by their frequency */
+/* input: E:counter of items, th:minimum support */
+/* output: permutation, #freq items */
+/* change: counters (infreq -> -1 ) */
+/* set *num to the size of database composed only of frequent items */
+/* set *Enum to # frequent items */
+/***********************************/
+int *TRSACT_perm_freq_item ( ARY *E, int th, int *num, int *Enum );
+
+
+/***********************************/
+/* load transaction database from file */
+/* input: fname:filename, T:memory for loading the file(need to be allocated memory), E:array of items(if i is frequent, ith cell is non-negative) */
+/* output: the size of database ( size of T ) */
+/* set *T to the transactions loaded from file */
+/***********************************/
+void TRSACT_load ( char *fname, ARY *T, ARY *E, int *ibuf );
+/***************************************************/
+/* find a transaction of the minimum size          */
+/* INPUT: T:transactions, occ:IDs of a subset of T */
+/* RETURN: ID of a transaction of minimum size     */
+/***************************************************/
+int TRSACT_find_minsiz (ARY *T, QUEUE *occ);
+
+/***************************************************/
+/* load weights of transactions from file          */
+/* INPUT: T:transactions, occ:IDs of a subset of T */
+/* RETURN: ID of a transaction of minimum size     */
+/***************************************************/
+void TRSACT_load_weight (ARY *T, char *fname);
+/**************************************************************/
+/* initialization of variables used in TRSACT_shrink */
+/**************************************************************/
+void LCM_shurink_init (QUEUE *occ);
+
+/**************************************************************/
+void LCM_shrink_end ();
+
+/************************************************/
+void LCM_shrink_get_item (QUEUE *Q, int t, int v, int max_item, QUEUE *jump);
+
+
+/**************************************************************/
+/* Find identical transactions in a subset of transactions, by radix-sort like method */
+/* infrequent items (refer LCM_occ) and items larger than max_item are ignored */
+/* INPUT: T:transactions, occ:subset of T represented by indices, result:array for output, max_item:largest item not to be ignored */
+/* use LCM_shrink_q, LCM_shrink_jump1, LCM_shrink_jump2:
+  working space(re-use for omiting initialization) */
+/* refer LCM_occ to identify which item is frequent */
+/* OUTPUT: if transactions i1, i2,..., ik are the same, 
+ choose one of them as the representative (suppose that it is i1), and set
+ result[i1]=-2, result[i2]=i1, result[i3]=i1,..., result[ik]=i1.  */
+/* if transaction i1 has no transaction same to i1, result[i1]=-2 */
+/*************************************************************************/
+void LCM_shrink ( ARY *T, QUEUE *occ, int *result, int max_item );
+
+/**********************************************************************/
+/* Using the result of TRSACT_shrink, merge the identical transactions
+   into one (the number of identical transactions is recorded in the 
+   multiplicity of transaction, i.e., if Q[i] and Q[j] are the same,
+    Q[i].end += Q[j].end, and Q[j] is deleted)   */
+/* input T:transactions, result:array representing the group of identical 
+ transactions */
+/* output: T:merged transactions, occ:merged subset  */
+/**********************************************************************/
+void LCM_add_same_transactions (ARY *T, int *result, QUEUE *occ);
+
+/*****************************************************************************/
+int LCM_suffix_and (QUEUE *Q, QUEUE *QQ, int pos);
+/****************************************************************************/
+/*  copy transaction t to tt (only of frequent items)                      **/
+/*  *p is the pointer to the buffer to be used                             **/
+/*  set LCM_result[tt] to be the position of the item "item"                   **/
+/****************************************************************************/
+void LCM_copy_transaction(QUEUE *Q, int tt, int t, int item, QUEUE_INT **p);
+
+/*****************************************************************************/
+void LCM_merge_same_transactions (ARY *T, int *result, QUEUE *occ, int item, int *t_new, QUEUE_INT **p);
+
+int LCM_occurrence_deliver(ARY *T, QUEUE *occ, QUEUE_INT max_item);
+void LCM_frequency_counting (ARY *T, QUEUE *occ, QUEUE_INT max_item);
+
+int LCM_maximality_check (ARY *T, QUEUE *occ, QUEUE_INT item);
+
+/*************************************************************************/
+/* INPUT: O:occurrence, jump:items, th:support, frq:frequency, add:itemset
+   OUTPUT: maximum item i s.t. frq(i)=frq
+   OPERATION: remove infrequent items from jump, and 
+    insert items i to "add" s.t. frq(i)=frq                              */
+/*************************************************************************/
+int LCM_rm_infreq (QUEUE *add);
+
+
+
+
+
+/*************************************************************************/
+/* delete marks for pruning of non-closed itemsets 
+   (items not making recursive call) */
+/*************************************************************************/
+void LCM_prepruning_del (int item);
+
+/*************************************************************************/
+/* set mark for pruning  of non-closed itemsets  
+   (items not making recursive call) */
+/*************************************************************************/
+void LCM_prepruning_set (int item, int mark_item, int max_item);
+
+/************************************************************************/
+/* take intersection of two queues */
+/* INPUT: Q,QQ: integer array, item */
+/* set Q to the intersection of Q and Q, (w.r.t. items > item) */
+/* tail position of the array is preserved (head position is not preserved!!)*/
+/************************************************************************/
+int LCM_QUEUE_and_tail (QUEUE *Q, QUEUE *QQ, int item);
+
+int qsort_QUEUEt_cmp ( const void *x, const void *y );
+/***********************************************************************/
+/* initialization of bitmap ppc */
+/***********************************************************************/
+void LCM_bitmap_ppc_init ( ARY *T, QUEUE *occ );
+
+/*************************************************************************/
+/*  check whether the itemset is a prefix preserving closure extension */
+/* INPUT: T:transactions, occ:subset of T, item, flag */
+/* RETURN: -1:if itemset is prefix preserving, o.w. the minimum item 
+         which is included in the closure fo the itemset */
+/* prefix is the set of items in a transaction s.t. items larger than "item" */
+/* if (flag&4) use bitmap for checking (bitmap_pcc) */
+/*************************************************************************/
+int LCM_ppc_check (ARY *T, QUEUE *occ, int item, int flag);
+
+
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+
+
+
+
+
+
+/****************************************************************************/
+/*       Occurrence Deliver for Bitmap                                      */
+/* input: occ:occurrences, max_item                                         */
+/* CAHNGE: for each item i<max_item, set O->h[i] to the transactions of occ */
+/*    including i (items larger than i are removed from the transactions)   */
+/****************************************************************************/
+void LCM_BM_occurrence_deliver_proc (int p, int w, int t);
+
+void LCM_BM_occurrence_deliver (int item, int mask);
+
+void LCM_BM_occurrence_delete (int item);
+
+/* LCM_jump.t-LCM_jump.s must be positive */
+void LCM_BM_occurrence_deliver_init (ARY *T, QUEUE *occ, int item);
+
+/*************************************************************************/
+// int LCM_BM_rm_infreq (int item, int *pmask){
+int LCM_BM_rm_infreq (int item);
+
+void LCM_load ( char *fname, ARY *T, int th );
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+/*   print a solution(itemset) to file */
+void LCM_output_itemset (int item);
+
+void LCM_solution (int i, int item);
+
+/*******************************************************************/
+/* output at the termination of the algorithm */
+/* print #of itemsets of size k, for each k */
+/* flag=1:all,closed,   0:maximal */
+/*******************************************************************/
+void LCM_output ( int flag );
+
+/***********************************************************************/
+/*  read parameters given by command line  */
+/***********************************************************************/
+void LCM_read_param (int argc, char *argv[]);
+void LCM_read_paramVA (int minsup);
+
+/*************************************************************************/
+/* Common initialization for LCM, LCMfreq, LCMmax */
+/*************************************************************************/
+void LCM_init ();
+/*************************************************************************/
+/* Common end processing for LCM, LCMfreq, LCMmax */
+/*************************************************************************/
+void LCM_end ();
+
+void LCM_BM_init ();
+
+void LCM_BM_end ();
+
+/*************************************************************************/
+/* LCM iteration (bitmap version ) */
+/* input: T:transactions(database), item:tail(current solution) */
+/*************************************************************************/
+void LCM_BM_iter (int item, int m);
+
+void LCM_BM_start (ARY *T, int item, int m);
+
+
+
+/***************************************************************/
+/* iteration of LCM ver. 4 */
+/* INPUT: item:tail of the current solution, t_new,buf:head of the list of 
+ ID and buffer memory of new transactions */
+/* (flag&4) => bitmap ppc mode */
+/*************************************************************************/
+int LCM_iter (int item, int t_new, int *buf, int flag );
+/*************************************************************************/
+
+extern void Mine_Closed_Itemsets(int minsup);
+#endif
+
+

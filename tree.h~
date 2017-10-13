@@ -50,6 +50,7 @@ public:
   void update_tree_id(int id);
   int get_tree_id();
   vector<Tree*> enumerate_subtree(Tree* subtree);
+  Tree* get_root();
   string get_tree_string();
   void print_node();
   

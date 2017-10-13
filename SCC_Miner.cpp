@@ -612,23 +612,25 @@ closed-patternを列挙
 */
 vector<RPTree*> get_root_candidates(RPTree* rptree,RPTree* rproot,bool is_improved){
   vector<RPTree*> root_candidates;
-  if(!is_children_same_occ(rptree)){
-    root_candidates.push_back(rptree);
-  }
+
   //occ(rp-node)を包含するrp-node2があればrp-node以下を削除かつ見ない
   if(is_improved && is_exist_occurrence_included(rptree,rproot)){
-    //cout << "hogehoge in rp cutter" << endl;
+    //    cout << "before rm_dec in rp cutter" << endl;
     rptree->rm_dec();
-
+    //cout << "after rm_dec in rp cutter" << endl;
     return root_candidates;
   }
 
+  if(!is_children_same_occ(rptree)){
+    root_candidates.push_back(rptree);
+  }
 
-  
+  //  cout << "before for in rp cutter" << endl;
   for(int i = 0, n = rptree->get_children().size();i<n;i++){
     vector<RPTree*> res = get_root_candidates((RPTree*)rptree->get_children()[i],rproot,is_improved);
     root_candidates.insert(root_candidates.end(),res.begin(),res.end());
-  } 
+  }
+  //  cout << "after for in rp cutter" << endl;
   return root_candidates;
 }
 
@@ -706,7 +708,7 @@ closed_patternからocc-listを見る
  EnumerationTree* get_closed_tree(RGTree* rg_tree,CP* closed_pattern){
    EnumerationTree* ne = new EnumerationTree(rg_tree->get_node()->id,rg_tree->get_node()->label);
    //cout << "before make_closed" << (closed_pattern->occ_list).size()<< endl;
-   make_closed_tree_rec(rg_tree,closed_pattern->occ_list,ne);
+   make_closed_tree_rec(rg_tree,closed_pattern->id_list,ne);
    //cout << "after make_closed " << endl;
    return ne;
  }
@@ -739,7 +741,7 @@ vector<EnumerationTree*> SCC_Miner(TreeDB* db,EnumerationTree* constrainedTree, 
   exp_rp_tree(rp_tree,minimum_support);
   rp_tree->reindexing(0);
   vector<RPTree*> root_candidates = get_root_candidates(rp_tree,rp_tree,false);
-
+  cout << "after enumerating root candidates :" << root_candidates.size() << endl;
   //generate rg_tree
   for(int i = 0,n = root_candidates.size() ; i < n ; i++){
     RGTree* rg_tree = new RGTree(root_candidates[i]);
@@ -753,21 +755,21 @@ vector<EnumerationTree*> SCC_Miner(TreeDB* db,EnumerationTree* constrainedTree, 
     */
     write_file_to_item_transactions(rg_tree->get_item_transaction());
 
-    //    cout << "LCM begin " << endl;
+    cout << "LCM begin " << endl;
     Mine_Closed_Itemsets(minimum_support);
-    //cout << "LCM end " << endl;
+    cout << "LCM end " << endl;
     
     vector<CP*> closed_patterns = read_CP_from_LCM_result(minimum_support);
-
+    cout <<"closed pattern is "<<closed_patterns.size() << endl; 
     for(int j = 0 , m = closed_patterns.size();j<m;j++){
+      
       if(!is_there_occurrence_matched(root_candidates[i],closed_patterns[j])){
 	result.push_back(get_closed_tree(rg_tree,closed_patterns[j]));
       }
     }
-  }
+    delete rg_tree;
 
-  
-  //todo
+  }
 
   return result;
 }
@@ -794,16 +796,25 @@ vector<EnumerationTree*> SCC_Miner_Improved(TreeDB* db, EnumerationTree* constra
   //  RPTree* rp_tree = make_rp_tree(constrainedTree->get_node()->label,oc_list,minimum_support);
   RPTree* rp_tree = new RPTree(constrainedTree->get_node()->label,oc_list);
   exp_rp_tree(rp_tree,minimum_support);
-  rp_tree->reindexing(0);
-  vector<RPTree*> root_candidates = get_root_candidates(rp_tree,rp_tree,true);
+  rp_tree->reindexing(0);  
   
+  cout << "before get_root" << endl;
+  vector<RPTree*> root_candidates = get_root_candidates(rp_tree,rp_tree,true);
+  cout << "after get_root : " <<root_candidates.size()  << endl;
+
   //generate rg_tree
   for(int i = 0,n = root_candidates.size() ; i < n ; i++){
     RGTree* rg_tree = new RGTree(root_candidates[i]);
     exp_rg_tree(rg_tree,minimum_support);
     rg_tree->reindexing(0);
+    cout << "rg_tree size is " <<rg_tree->get_num_of_nodes() << endl;
+    
     write_file_to_item_transactions(rg_tree->get_item_transaction());
+
+    cout << "before LCM" <<  endl;
     Mine_Closed_Itemsets(minimum_support);
+    cout << "after LCM" << endl;
+
     vector<CP*> closed_patterns = read_CP_from_LCM_result(minimum_support);
 
     for(int j = 0 , m = closed_patterns.size();j<m;j++){
@@ -811,6 +822,7 @@ vector<EnumerationTree*> SCC_Miner_Improved(TreeDB* db, EnumerationTree* constra
 	result.push_back(get_closed_tree(rg_tree,closed_patterns[j]));
       }
     }
+    delete rg_tree;
   }
 
   
@@ -818,7 +830,7 @@ vector<EnumerationTree*> SCC_Miner_Improved(TreeDB* db, EnumerationTree* constra
 }
 
  /*
-@brief SCC-Miner-improvedアルゴリズム本体
+@brief SCC-Path-Minerアルゴリズム本体
 @param1 db 木のデータベースへのポインタ
 @param2 constrainedTree 部分木制約の木(ここは木リストに変更することも考えられる)
 @param3 minimum_support ミニマムサポート
@@ -839,19 +851,29 @@ vector<EnumerationTree*> SCC_Path_Miner(TreeDB* db,EnumerationTree* constrainedT
   //  RPTree* rp_tree = make_rp_tree(constrainedTree->get_node()->label,oc_list,minimum_support);
   RPTree* rp_tree = new RPTree(constrainedTree->get_node()->label,oc_list);
   exp_rp_tree(rp_tree,minimum_support);
+  rp_tree->reindexing(0);
+
   rp_tree_cutter(rp_tree,rp_tree);
-  rp_tree->print_tree();
+  rp_tree->reindexing(0);
+
   vector<int> dummy;
-  
+  cout << "before path occl" << endl;
   vector<Path_OCCL*> p = rp_tree->get_POCCL_list(dummy); 
   //cout<< p.size()<<endl;
-  print_POCCL_list(p);
+  //print_POCCL_list(p);
+  cout << "before rprglist" << endl;
   vector<RPRGPathItem*> rprg_list = enum_rprg_item_list(p,minimum_support,true);
-  print_RPRG_path_item_list(rprg_list);
+  cout << "----------- rprg path item list ------------" << endl;
+  //print_RPRG_path_item_list(rprg_list);
+  cout << "---------------------------------------------" << endl;
   //  cout <<"rprg_list size is "<< rprg_list.size() << endl;
+  cout << "before convert rprg list" << endl; 
   vector<vector<int>> r = convert_rprg_list(rprg_list);
+  cout <<"write_file_to_item_transactions " << endl;
   write_file_to_item_transactions(r);
+  cout << "before lcm" << endl;
   Mine_Closed_Itemsets(minimum_support);
+  cout << "after lcm" << endl;
 
   r = read_result_of_lcm();
   for(int i = 0,n = r.size();i<n;i++){

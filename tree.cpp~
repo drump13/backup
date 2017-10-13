@@ -214,6 +214,14 @@ Tree* Tree::get_child(int label){
   return NULL;
 }
 
+Tree* Tree:: get_root(){
+  Tree* current = this;
+  while(current->parent != NULL){
+    current = current->parent;
+  }
+  return current;
+}
+
 void Tree::update_tree_id(int id){
   tree_id = id;
   for(int i =0,n=children.size();i<n;i++){
@@ -235,6 +243,7 @@ string Tree::get_tree_string(){
   return s + "-1 ";
 }
 
+//debug
 void Tree::print_node(){
   cout <<"tree_id:" << tree_id  << " node_id:" << node->id << endl;
 }

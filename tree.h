@@ -48,9 +48,12 @@ public:
   bool is_subtree(Tree* tree);
   Tree* get_child(int label);
   void update_tree_id(int id);
+  void to_attribute_tree_by_cutting();
   int get_tree_id();
   vector<Tree*> enumerate_subtree(Tree* subtree);
   Tree* get_root();
+  int get_num_of_nodes();
+
   string get_tree_string();
   void print_node();
   
@@ -76,8 +79,15 @@ public:
 	Tree *get_tree(int tree_id,int node_id);
 	bool is_frequent(Tree* tree,int minimum_sup);
 	vector<Tree*> get_subtree_list(Tree* tree);
+	void to_attribute_tree_by_cutting();
+	
+	int get_num_of_nodes();
+	int get_num_of_trees();
+	Tree* get_tree(int i);
+
 	void set_tree_id();
 	void print_tree_db();
+
 
 private:	
 	vector<Tree*> treedb;

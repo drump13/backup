@@ -1144,7 +1144,6 @@ void LCM_output ( int flag ){
 
 
   for ( n=i=0 ; i<=LCM_Eend ; i++ ){
-    printf("%d %d\n",i,LCM_Eend);
     n += LCM_sc[i];
     if ( LCM_sc[i] != 0 ) nn = i;
 
@@ -1178,6 +1177,7 @@ void LCM_output ( int flag ){
       fprintf (LCM_fp, "\n" );
     }
   }
+
 }
 
 /***********************************************************************/
@@ -1510,20 +1510,24 @@ int LCM_iter (int item, int t_new, int *buf, int flag ){
 /*************************************************************************/
 void Mine_Closed_Itemsets(int minsup){
   int i, f=1;
+  printf("hogehogehogehoge\n");
   initialize();
+  printf("hogehogehogehoge\n");
   LCM_read_paramVA(minsup);
-
+  printf("hogehogehogehoge\n");
   LCM_init ();
+  printf("hogehogehogehoge\n");
   if ( LCM_BITMAP) LCM_BM_init ();
   if ( LCM_occ[0].end == LCM_Trsact_weight && LCM_problem == LCM_CLOSED ) f=0;
   if ( LCM_problem == LCM_MAXIMAL ) f=0;
-
+  printf("hogehogehogehoge\n");
   for ( i=0 ; i<LCM_Eend ; i++ ){
     LCM_iter ( i, LCM_Trsact.num, LCM_buf2, 0 );
     LCM_occ[i].t = LCM_occ[i].end = 0;
   }
   LCM_iters++;
-
+  
+  printf("hogehogehogehoge\n");
   LCM_output ( f );
   LCM_end ();
   if ( LCM_BITMAP) LCM_BM_end ();

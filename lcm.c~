@@ -1140,17 +1140,14 @@ void LCM_solution (int i, int item){
 /*******************************************************************/
 void LCM_output ( int flag ){
   int i, n, nn=0;
-  printf("hogehoge %d %d\n",LCM_Eend,sizeof(*LCM_sc));
   if ( flag && LCM_itemset_lb==0 ) LCM_sc[0] = 1;
 
-  printf("hogehoge \n");
+
   for ( n=i=0 ; i<=LCM_Eend ; i++ ){
-    printf("%d %d\n",i,LCM_Eend);
     n += LCM_sc[i];
     if ( LCM_sc[i] != 0 ) nn = i;
 
   }
-  printf("hogehoge \n");
   //  printf ("%d\n", n);
   //for ( i=0 ; i<=nn ; i++ ) printf ("%d\n", LCM_sc[i] );
   //printf("hogehoge \n");
@@ -1180,6 +1177,7 @@ void LCM_output ( int flag ){
       fprintf (LCM_fp, "\n" );
     }
   }
+
 }
 
 /***********************************************************************/
@@ -1525,10 +1523,9 @@ void Mine_Closed_Itemsets(int minsup){
     LCM_occ[i].t = LCM_occ[i].end = 0;
   }
   LCM_iters++;
-
-  printf("%d\n",minsup);
+  
+  printf("hogehogehogehoge");
   LCM_output ( f );
-  printf("%d\n",minsup);
   LCM_end ();
   if ( LCM_BITMAP) LCM_BM_end ();
 }

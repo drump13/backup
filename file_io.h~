@@ -26,11 +26,11 @@ vector<CP*> read_CP_from_LCM_result(int min_sup);
 void write_final_result(vector<EnumerationTree*> ets );
 vector<string> read_cslogs();
 string to_csstr(vector<string> sv);
-
-vector<vector<int>> convert_trans_and_occ
+vector<vector<int>> convert(vector<vector<int>> vvi);
+TreeDB* get_treedb_from_file(string filename);
 
 //debug
 void print_CP(CP* cp);
 void print_CP_list(vector<CP*> cp_list);
-
+void print_vvi(vector<vector<int>> vvi);
 #endif //FILE_IO

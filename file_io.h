@@ -23,10 +23,11 @@ void write_file_to_item_transactions(vector<vector<int>> transactions);
 vector<string> read_tree_db();
 vector<vector<int>> read_result_of_lcm();
 vector<CP*> read_CP_from_LCM_result(int min_sup);
-void write_final_result(vector<EnumerationTree*> ets );
+void write_final_result(vector<EnumerationTree*> ets ,string filename);
 vector<string> read_cslogs();
 string to_csstr(vector<string> sv);
 vector<vector<int>> convert(vector<vector<int>> vvi);
+TreeDB* get_treedb_from_file(string filename);
 
 //debug
 void print_CP(CP* cp);

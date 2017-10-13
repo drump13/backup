@@ -8,10 +8,11 @@
 occurrenceのvectorにするためにまずは2次元配列の行と列を入れ替える操作を行う
 */
 void write_file_to_item_transactions(vector<vector<int>> tr){
+  cout << "before convert " << endl;
   vector<vector<int>> transactions = convert(tr);
-  
+  cout << "before output file stream" << endl;
   ofstream output_file(EXCHANGE_OUT_FILE);
-  
+  cout << "before write " << endl;
   for(int i = 0,n=transactions.size(); i<n;i++){
     for(int j =0,m=transactions[i].size();j<m;j++){
       output_file << transactions[i][j] << " ";
@@ -70,46 +71,34 @@ vector<CP*> read_CP_from_LCM_result(int min_sup){
     cerr << "file input is failed" << endl;
   }
   string s;
-  int i = 0;
   bool skip_flag = false;
   vector<vector<int>> occ_lists;
   vector<vector<int>> id_lists;
+  int line = 0;
   while(getline(ifs,s)){
-    ++i;
     vector<string> sv = split(s,' ');
-    if(sv.size() == 0){continue;}
-    
-    if(i%2 == 1){
-      if(stoi(sv[0]) < min_sup){
-	skip_flag = true;
-	continue;
-      }
-
+    if(line%2 == 0){
       vector<int> current;
-
-      for(int j = 1,m = sv.size();j<m;j++){
-	current.push_back(stoi(sv[j]));
-      }
-
-      sort(current.begin(),current.end());
-      occ_lists.push_back(current);
-
-    }else{
-      if(skip_flag){
-	skip_flag = false;
-	continue;
-      }
-      vector<int> current;
-      for(int j = 1 ,m = sv.size();j<m;j++){
-	current.push_back(stoi(sv[j]));
+      for(int i = 1,n=sv.size();i<n;i++){
+	current.push_back(stoi(sv[i]));
       }
       sort(current.begin(),current.end());
       id_lists.push_back(current);
 
+    }else{
+      vector<int> current;
+      for(int i = 1,n = sv.size();i<n;i++){
+	current.push_back(stoi(sv[i]));
+      }
+      sort(current.begin(),current.end());
+      occ_lists.push_back(current);
     }
+    
+    ++line;
   }
+  
   vector<CP*> result;
-  for(int i = 0,n = id_lists.size() ; i < n ;i++){
+  for(int i = 0 , n = id_lists.size(); i < n; i++){
     CP* cp = new CP(id_lists[i],occ_lists[i]);
     result.push_back(cp);
   }
@@ -136,8 +125,8 @@ void print_CP(CP* cp){
     }
   }
 
-void write_final_result(vector<EnumerationTree*> result){
-  ofstream output_file(OUTPUT_FILE);
+void write_final_result(vector<EnumerationTree*> result,string filename = OUTPUT_FILE){
+  ofstream output_file(filename);
   for(int i = 0,n=result.size(); i<n;i++){
     output_file << result[i]->get_tree_string();
     output_file << "\n";
@@ -175,23 +164,60 @@ string to_csstr(vector<string> sv){
 }
 
 /*
+@brief 中のベクターのmax sizeを返す
+ */
+int get_max_size(vector<vector<int>> transaction){
+    int max=0;
+    for(int i = 0 , n = transaction.size();i<n;i++){
+      int current_size = transaction[i].size();
+      if(max < current_size){max = current_size;}
+    }
+    return max;
+}
+
+/*
   @brief 2次元配列の行と列を入れ替える
  */
 vector<vector<int>> convert(vector<vector<int>> transaction){
-    vector<vector<int>> result;
-    for(int j = 0,m = transaction[0].size();j<m;j++){
-      vector<int> v;
-      v.push_back(0);
-      result.push_back(v);
+  int max = get_max_size(transaction);  
+  vector<vector<int>> result;
+  for(int j = 0;j<max;j++){
+    vector<int> v;
+    result.push_back(v);
+  }
+  for(int i = 0 , n=transaction.size();i<n;i++){
+    for(int j =0, m = transaction[i].size();j<m;j++){
+      result[transaction[i][j]].push_back(i);
     }
-    for(int i = 1 , n=transaction.size();i<n;i++){
-      for(int j =0, m = transaction[i].size();j<m;j++){
-	result[transaction[i][j]].push_back(i);
-      }
-    }
+  }
     //    print_vvi(result);
     return result;
 }
+
+/*
+@brief 指定されたファイルから木DBを読んで返す
+@param filename
+ */
+TreeDB* get_treedb_from_file(string filename){
+  ifstream input_file(filename);
+  if(input_file.fail()){
+    cerr << "file input is failed" << endl;
+  }
+  string s;
+  vector<string> tree_strings;
+  while(getline(input_file,s)){
+    tree_strings.push_back(s);
+  }
+
+  TreeDB* result = new TreeDB();
+  for(int i = 0, n = tree_strings.size();i < n;i++){
+    result->add_tree(make_tree(tree_strings[i]));    
+  }
+
+  return result;
+  
+}
+
 
 //debug
 void print_vvi(vector<vector<int>> vvi){

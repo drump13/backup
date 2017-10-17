@@ -1,55 +1,26 @@
+#ifndef SCCMiner
+#define SCCMiner
+ 
 #include <iostream>
 #include <vector>
 #include <map>
 #include "tree.h"
 #include "file_io.h"
+#include "lcm_cpp/lcm.h"
 
+/*
 extern "C" {
-  #include "lcm.h"
-} 
+  #include "lcm25/lcm.h"
+  } */
+
+
+
 /*
 struct RPTree{
   vector<Tree*> roots;
   int label;
   RPTree(vector<Tree*> oc,int lb):roots(oc),label(lb){}
   };*/
-
-
-/*
-@struct Path_OCCL
-@brief ラベル列とoccurrence_listのペア
-@sa get_POCC_list
- */
-struct Path_OCCL{
-  vector<int> rp_path;//label's path
-  vector<Tree*> occ_list; //occ_lst 
-  vector<int> item_list;
-  
-
-  Path_OCCL(vector<int> p,vector<Tree*> ocl){
-    for(int i = 0 , n = p.size();i<n;i++){
-      rp_path.push_back(p[i]);
-    }
-    for(int i = 0,n = ocl.size();i<n;i++){
-      occ_list.push_back(ocl[i]);
-      item_list.push_back(i);
-    }
-  }
-
-  Path_OCCL(vector<int> p,vector<Tree*> ocl,vector<int> vlist){
-    for(int i = 0 , n = p.size();i<n;i++){
-      rp_path.push_back(p[i]);
-    }
-    for(int i = 0,n = ocl.size();i<n;i++){
-      occ_list.push_back(ocl[i]);
-    }
-    for(int i=0,n=vlist.size();i<n;i++){
-      item_list.push_back(vlist[i]);
-    }
-  }
-  
-  
-};
 
 //debug
 void print_Path_OCCL(Path_OCCL* poccl){
@@ -79,117 +50,6 @@ void print_POCCL_list(vector<Path_OCCL*> poccl_list){
   }
 }
 
-
-
-class RPTree : public EnumerationTree{
-public:
-  vector<int> item_list;
-  RPTree(int label,vector<Tree*> occ_list):EnumerationTree(0,label,occ_list){
-    for(int i = 0 , n = occ_list.size();i<n;i++){
-      item_list.push_back(i);
-    }
-  }
-  RPTree(int label,vector<Tree*> occ_list,vector<int> item_list):EnumerationTree(0,label,occ_list){
-    for(int i = 0,n=item_list.size();i<n;i++){
-      this->item_list.push_back(item_list[i]);
-    }
-  }
-
-  virtual ~RPTree(){};
-  /*
-    @brief このノード以下の木を削除
-    @return
-   */
-  void rm_dec(){
-    ((RPTree*)parent)->remove_child(get_node()->label);
-    parent = NULL;
-  };
-  
-  /*
-    @brief 以下のノードのパスとOccurrence_listのペアのリストを返す
-    @param label_path　外から渡されるときは空のベクターを引数に取る
-    @detail
-  */
-  vector<Path_OCCL*> get_POCCL_list(vector<int> label_path){
-    vector<Path_OCCL*> result;
-    vector<int> s;
-    if(label_path.size() == 0){
-      s.push_back(get_node()->label);
-      Path_OCCL* poc = new Path_OCCL(s,get_occurrence_list(),item_list);
-      result.push_back(poc);
-    }else{
-      Path_OCCL* poc = new Path_OCCL(label_path,get_occurrence_list(),item_list);
-      poc->rp_path.push_back(get_node()->label);
-      s = poc->rp_path;
-      result.push_back(poc);
-    }
-    
-    for(int i = 0 , n = get_children().size();i<n;i++){
-      vector<Path_OCCL*> res = ((RPTree*) get_children()[i])->get_POCCL_list(s);
-      result.insert(result.end(),res.begin(),res.end());
-    }
-    
-    return result;
-    
-  }
-
-
-  //debug
-  void print_tree()override{
-    cout << node->id << ":" << node->label << " " << get_occurrence_list().size() << endl;
-    print_occurrence_list();
-    for(int i = 0,n=children.size();i<n;i++){
-      children[i]->print_tree();
-    }
-    cout << -1 << " " << endl;
-  }
-};
-
-
-class RGTree : public EnumerationTree{
-public:
-  RGTree(RPTree* rp_tree):EnumerationTree(0,rp_tree->get_node()->label,rp_tree->get_occurrence_list()){
-    for(int i=0,n=rp_tree->get_occurrence_list().size();i<n;i++){
-      item_list.push_back(i);
-    }
-  }
-  RGTree(int label, vector<Tree*> occ_list,vector<int> item_list):EnumerationTree(0,label,occ_list){
-    this->item_list = item_list;
-  }
-  vector<int> item_list;
-  //debug
-  void print_item_list(){
-    cout <<"size:" << item_list.size()<< " {" ;
-    for(int i = 0,n = item_list.size();i <n;i++){
-      cout << item_list[i]<< " ";
-    }
-    cout << "}"<<endl;
-  }
-  //debug
-  void print_tree()override{
-    cout << node->id << ":" << node->label << " " << get_occurrence_list().size() << endl;
-    print_occurrence_list();
-    print_item_list();
-    for(int i = 0,n=children.size();i<n;i++){
-      children[i]->print_tree();
-    }
-    cout << -1 << " " << endl;
-  }
-
-  /*
-    @brief 子孫のitem_listをvectorにまとめて返す
-   */
-  vector<vector<int>> get_item_transaction(){
-    vector<vector<int>> transaction;
-    transaction.push_back(item_list);
-    for(int i = 0,n = get_children().size() ; i < n;i++){
-      vector<vector<int>> res = ((RGTree*)get_children()[i])->get_item_transaction();
-      transaction.insert(transaction.end(),res.begin(),res.end());
-    }
-    return transaction;
-  }
-
-};
 
 
 
@@ -753,13 +613,15 @@ vector<EnumerationTree*> SCC_Miner(TreeDB* db,EnumerationTree* constrainedTree, 
     cout << "-----------------" << endl;
     cout << "minimum_support is " << minimum_support << endl;
     */
+    /*
     write_file_to_item_transactions(rg_tree->get_item_transaction());
-
-    cout << "LCM begin " << endl;
+        cout << "LCM begin " << endl;
     Mine_Closed_Itemsets(minimum_support);
     cout << "LCM end " << endl;
+    */
+    Mine_Closed_Itemsets(rg_tree->get_item_transaction(),minimum_support);
     
-    vector<CP*> closed_patterns = read_CP_from_LCM_result(minimum_support);
+    vector<CP*> closed_patterns = read_CP_from_LCM_ver2_result(rg_tree);
     cout <<"closed pattern is "<<closed_patterns.size() << endl; 
     for(int j = 0 , m = closed_patterns.size();j<m;j++){
       
@@ -809,13 +671,15 @@ vector<EnumerationTree*> SCC_Miner_Improved(TreeDB* db, EnumerationTree* constra
     rg_tree->reindexing(0);
     cout << "rg_tree size is " <<rg_tree->get_num_of_nodes() << endl;
     
+    /*
     write_file_to_item_transactions(rg_tree->get_item_transaction());
 
     cout << "before LCM" <<  endl;
     Mine_Closed_Itemsets(minimum_support);
     cout << "after LCM" << endl;
-
-    vector<CP*> closed_patterns = read_CP_from_LCM_result(minimum_support);
+    */
+    Mine_Closed_Itemsets(rg_tree->get_item_transaction(),minimum_support);
+    vector<CP*> closed_patterns = read_CP_from_LCM_ver2_result(rg_tree);
 
     for(int j = 0 , m = closed_patterns.size();j<m;j++){
       if(!is_there_occurrence_matched(root_candidates[i],closed_patterns[j])){
@@ -869,15 +733,24 @@ vector<EnumerationTree*> SCC_Path_Miner(TreeDB* db,EnumerationTree* constrainedT
   //  cout <<"rprg_list size is "<< rprg_list.size() << endl;
   cout << "before convert rprg list" << endl; 
   vector<vector<int>> r = convert_rprg_list(rprg_list);
+
+  /*
   cout <<"write_file_to_item_transactions " << endl;
   write_file_to_item_transactions(r);
   cout << "before lcm" << endl;
   Mine_Closed_Itemsets(minimum_support);
   cout << "after lcm" << endl;
+  */
 
-  r = read_result_of_lcm();
+  r = Mine_Closed_Itemsets(r,minimum_support);
+
+  //  r = read_result_of_lcm();
   for(int i = 0,n = r.size();i<n;i++){
     result.push_back(merge_item_result(r[i],rprg_list));
   }
   return result;
 }
+
+
+
+#endif //SCCMiner

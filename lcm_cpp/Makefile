@@ -3,22 +3,16 @@ CC = gcc
 CFLAGS = -c 
 CXXFLAGS = -c  -std=c++11
 
-#CSOURCES = \
-#	lcm25/lcm.c 
+CSOURCES = \
 
-CXXSOURCES = \
-	tree.cpp \
-	file_io.cpp\
-	debug.cpp\
-	lcm_cpp/lcm.cpp
+CXXSOURCES =lcm.cpp\
+	lcm_debug.cpp 
 
 OBJECT = \
-	tree.o\
-	file_io.o\
-	debug.o\
-	lcm.o
+	lcm.o\
+	lcm_debug.o
 
-BINARY = debug \
+BINARY = lcm_debug \
 
 program: 
 #	$(CC) $(CFLAGS) $(CSOURCES)

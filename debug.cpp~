@@ -5,9 +5,7 @@
 //#include "SCCA_Miner.cpp"
 //#include "SCC_Path_Miner.cpp"
 #include "SCC_Miner.cpp"
-extern "C"{
-  #include "lcm.h"
-}
+
 
 
 
@@ -45,7 +43,13 @@ int main(){
   // vector<EnumerationTree*> result = SCC_Miner(db,et,MIN_SUP);
   vector<EnumerationTree*> result = SCC_Miner_Improved(db,et,MIN_SUP);
   cout << "closed tree size is" << result.size() << endl; 
-  result = SCC_Path_Miner(db,et,MIN_SUP);
+  // result = SCC_Path_Miner(db,et,MIN_SUP);
+  result = SCC_Miner(db,et,MIN_SUP);
+  cout << "closed tree size is " << result.size() << endl;
+  for(int i = 0 , n = result.size() ; i<n; i++){
+    cout << result[i]->get_tree_string() << endl;
+    cout << " ------- " << endl;
+}
   //  cout << " --";
   //result[6]->print_tree();
   

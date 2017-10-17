@@ -1,6 +1,5 @@
 #include "file_io.h"
 
-
 /*
 @brief LCMに渡すファイルを生成する
 @param RG-Treeを走査して得られたitem_vectorのvector
@@ -60,12 +59,45 @@ vector<vector<int>> read_result_of_lcm(){
 }
 
 /*
-@brief LCMの結果をDB.txtから読む
-@param min_sup
+@brief LCMの結果をout.txtから読む
+@param
+@return CPリスト
+@detail
+ver2はアイテムセットのoccurrenceを返さないため，rgtreeにフィルターをかけることでoccurrence
+を取得する．
+*/
+vector<CP*> read_CP_from_LCM_ver2_result(RGTree* rgtree){
+  ifstream ifs(EXCHANGE_IN_FILE);
+  if(ifs.fail()){
+    cerr << "file input is failed" << endl;
+  }
+  string s;
+  vector<vector<int>> id_lists;
+  while(getline(ifs,s)){
+    vector<string> sv = split(s,' ');
+    vector<int> current;
+    for(int i = 0 , n = sv.size();i<n;i++){
+      current.push_back(stoi(sv[i]));
+    }
+    sort(current.begin(),current.end());
+    id_lists.push_back(current);
+  }
+  vector<CP*> result;
+  for(int i = 0 , n = id_lists.size();i<n;i++){
+    vector<int> occ = rgtree->filter_rgtree_occurrence(id_lists[i],rgtree->item_list);
+    result.push_back(new CP(id_lists[i],occ));
+  }
+  return result;
+}
+
+
+
+/*
+@brief LCMの結果をout.txtから読む
 @return CP occ_list,idlistのペア
 @detail occがmin_sup以下のclosed-patternを無視する
  */
-vector<CP*> read_CP_from_LCM_result(int min_sup){
+vector<CP*> read_CP_from_LCM_result(){
   ifstream ifs(EXCHANGE_IN_FILE);
   if(ifs.fail()){
     cerr << "file input is failed" << endl;

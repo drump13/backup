@@ -4,8 +4,7 @@ CFLAGS = -c
 CXXFLAGS = -c  -std=c++11
 
 CSOURCES = \
-	lcm.c \ 
-        dummy.c
+	lcm25/lcm.c 
 
 CXXSOURCES = \
 	tree.cpp \

@@ -332,6 +332,7 @@ vector<string> split(const string &s, char delim);
 Tree* make_tree(string canonical_form);
 EnumerationTree* gen_enumeration_tree(Tree *tree,EnumerationTree *parent,vector<Tree*> occ_list);
 vector<int> get_correspond_index_list(vector<Tree*> current_list,vector<Tree*> root_occurrence_list);
+//debug
 void print_tree_vector(vector<Tree*> tree_vec);
-
+void print_vv(vector<vector<int>> vv);
 #endif //TREE

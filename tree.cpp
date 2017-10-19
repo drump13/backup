@@ -718,3 +718,13 @@ void print_tree_vector(vector<Tree*> tree_vec){
     cout << "--------------" << endl; 
   }
 }
+
+void print_vv(vector<vector<int>>vv){
+    for(int i = 0 , n = vv.size();i<n;i++){
+      cout << "{"; 
+      for(int j = 0,m = vv[i].size();j<m;j++){
+	cout << vv[i][j] << ",";
+      }
+      cout << "}"<<endl;
+    }
+  }

@@ -135,6 +135,22 @@ int Tree::reindexing(int current){
   }
   return c;
 }
+/*
+@brief 任意の無順序木をattribute treeに変換 
+@detail
+同じラベルを持つノードが複数現れるとき，より左に現れるノードとその子孫を削除
+ */
+void Tree::to_attribute_tree_by_cutting(){
+  map<int,Tree*> label_map;
+  for(int i = 0,n=children.size(); i<n;i++){
+    label_map[children[i]->get_node()->label] = children[i];
+  }
+  vector<Tree*> new_children;
+  for(auto itr = label_map.begin(); itr!=label_map.end();++itr){
+    new_children.push_back(itr->second);
+  }
+  children = new_children;
+}
 
 
 void Tree::print_tree(){
@@ -220,6 +236,14 @@ Tree* Tree:: get_root(){
     current = current->parent;
   }
   return current;
+}
+
+int Tree::get_num_of_nodes(){
+  int result = children.size();
+  for(int i = 0 , n = children.size();i<n;i++){
+    result += children[i]->get_num_of_nodes();
+  }
+  return result;
 }
 
 void Tree::update_tree_id(int id){
@@ -548,6 +572,43 @@ vector<Tree*> TreeDB::get_subtree_list(Tree* subtree){
   }
 
   return result;
+}
+
+/*
+@brief TreeDB中の木全てをattributeTreeに変換
+@sa Tree::to_attribute_tree_by_cutting
+ */
+void TreeDB::to_attribute_tree_by_cutting(){
+  for(int i = 0 ,n = treedb.size();i<n;i++){
+    treedb[i]->to_attribute_tree_by_cutting();
+  }
+}
+
+/*
+@brief TreeDB中のノードの数を返す
+@sa Tree::get_num_of_nodes
+ */
+int TreeDB::get_num_of_nodes(){
+  int result = 0;
+  for(int i = 0, n= treedb.size() ;i<n;i++){
+    result += treedb[i]->get_num_of_nodes();
+  }
+  return result;
+}
+
+/*
+@brief DB中の木の数を返す
+ */
+int TreeDB::get_num_of_trees(){
+  return treedb.size();
+}
+
+/*
+@brief DB中のi番目の木の根を返す
+@param i
+ */
+Tree* TreeDB::get_tree(int i){
+  return treedb[i];
 }
 
 void TreeDB::set_tree_id(){

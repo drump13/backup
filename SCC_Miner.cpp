@@ -558,6 +558,22 @@ closed_patternからocc-listを見る
  }
 
 /*
+@brief idリストのリストを渡して，それに対応したrg-treeのocclistとのペアのリストにして返す
+@param rg_tree
+@param id_lists
+@return vector<CP*> 
+ */
+vector<CP*> get_cp_list_corresponding_to_ids(RGTree* rg_tree,vector<vector<int>>id_lists){
+    vector<CP*> result;
+    for(int i = 0, n = id_lists.size();i<n;i++){
+      vector<int> occ = rg_tree->filter_rgtree_occurrence(id_lists[i],rg_tree->item_list);
+      result.push_back(new CP(id_lists[i],occ));
+    }
+    return result;
+}
+
+
+/*
 @brief rg-treeにノードidでフィルターをかけてclosed-treeを生成
 @param rg-tree
 @param closed-pattern
@@ -619,9 +635,14 @@ vector<EnumerationTree*> SCC_Miner(TreeDB* db,EnumerationTree* constrainedTree, 
     Mine_Closed_Itemsets(minimum_support);
     cout << "LCM end " << endl;
     */
-    Mine_Closed_Itemsets(rg_tree->get_item_transaction(),minimum_support);
+       vector<vector<int>> vv =  convert(rg_tree->get_item_transaction());
+       // print_vv(vv);
+    vector<vector<int>> id_lists = Mine_Closed_Itemsets(vv,minimum_support);
+    /* cout << " ------ closed itemsets ------" << endl;
+    print_vv(id_lists);
+    cout << " -----end -------" << endl;*/
+    vector<CP*> closed_patterns = get_cp_list_corresponding_to_ids(rg_tree,id_lists);
     
-    vector<CP*> closed_patterns = read_CP_from_LCM_ver2_result(rg_tree);
     cout <<"closed pattern is "<<closed_patterns.size() << endl; 
     for(int j = 0 , m = closed_patterns.size();j<m;j++){
       
@@ -678,8 +699,13 @@ vector<EnumerationTree*> SCC_Miner_Improved(TreeDB* db, EnumerationTree* constra
     Mine_Closed_Itemsets(minimum_support);
     cout << "after LCM" << endl;
     */
-    Mine_Closed_Itemsets(rg_tree->get_item_transaction(),minimum_support);
-    vector<CP*> closed_patterns = read_CP_from_LCM_ver2_result(rg_tree);
+    //    vector<vector<int>> vv =  rg_tree->get_item_transaction();
+    //Mine_Closed_Itemsets(convert(vv),minimum_support);
+//    vector<CP*> closed_patterns = read_CP_from_LCM_ver2_result(rg_tree);
+
+    vector<vector<int>> vv =  rg_tree->get_item_transaction();
+    vector<vector<int>> id_lists = Mine_Closed_Itemsets(convert(vv),minimum_support);
+    vector<CP*> closed_patterns = get_cp_list_corresponding_to_ids(rg_tree,id_lists);
 
     for(int j = 0 , m = closed_patterns.size();j<m;j++){
       if(!is_there_occurrence_matched(root_candidates[i],closed_patterns[j])){
@@ -732,7 +758,7 @@ vector<EnumerationTree*> SCC_Path_Miner(TreeDB* db,EnumerationTree* constrainedT
   cout << "---------------------------------------------" << endl;
   //  cout <<"rprg_list size is "<< rprg_list.size() << endl;
   cout << "before convert rprg list" << endl; 
-  vector<vector<int>> r = convert_rprg_list(rprg_list);
+  vector<vector<int>> r = convert(convert_rprg_list(rprg_list));
 
   /*
   cout <<"write_file_to_item_transactions " << endl;

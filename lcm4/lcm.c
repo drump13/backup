@@ -411,6 +411,7 @@ ARY TRSACT_file_count ( char *fname, int *Tnum, int *maxT){
     ARY_init ( &EE, sizeof(int) );
     fopen2r ( fp2, LCM_weight_file, "TRSACT_file_count");
   }
+
   do {
     k=0;
     if ( LCM_weight_file ) w = file_read_int (fp2);
@@ -430,6 +431,7 @@ ARY TRSACT_file_count ( char *fname, int *Tnum, int *maxT){
     (*Tnum)++;  /* increase #transaction */
     E.dellist += k;
   } while ( (fp.err&2)==0 );
+
   FILE2_close ( &fp );
   for ( i=0,LCM_sig_siz=0,LCM_shrink_maxocc=-1; i<E.num ; i++ ){
     if ( LCM_weight_file ){ if ( ((int *)(EE.h))[i]<LCM_th ) continue; }
@@ -438,6 +440,7 @@ ARY TRSACT_file_count ( char *fname, int *Tnum, int *maxT){
     if ( ((int *)(E.h))[i] > LCM_Trsact_num/10 ) LCM_sig_siz++;
     LCM_buf_siz += ((int *)(E.h))[i];
   }
+
   LCM_sig_siz = (LCM_sig_siz+31) / 32;
   if ( LCM_weight_file ){
     fclose ( fp2 );
@@ -1151,7 +1154,7 @@ void LCM_output ( int flag ){
 
 
   for ( n=i=0 ; i<=LCM_Eend ; i++ ){
-    //  printf("%d %d\n",i,LCM_Eend);
+    printf("%d %d\n",i,LCM_sc[i]);
     n += LCM_sc[i];
     if ( LCM_sc[i] != 0 ) nn = i;
 
@@ -1533,9 +1536,9 @@ void Mine_Closed_Itemsets(int minsup){
   LCM_read_paramVA(minsup);
   LCM_init ();
   if ( LCM_BITMAP) LCM_BM_init ();
-  if ( LCM_occ[0].end == LCM_Trsact_weight && LCM_problem == LCM_CLOSED ) f=0;
+  printf("after lcm bim init \n");
+  //  if ( LCM_occ[0].end == LCM_Trsact_weight && LCM_problem == LCM_CLOSED ) f=0;
   if ( LCM_problem == LCM_MAXIMAL ) f=0;
-  printf("before for LCM_Eend \n");
   for ( i=0 ; i<LCM_Eend ; i++ ){
     printf("lcm iter %d %d\n",i,LCM_Eend);
     LCM_iter ( i, LCM_Trsact.num, LCM_buf2, 0 );
@@ -1544,7 +1547,7 @@ void Mine_Closed_Itemsets(int minsup){
   LCM_iters++;
   
   printf("before lcm output \n");
-  LCM_output ( f );
+  LCM_output ( 1 );
   printf("before LCM end()\n");
   LCM_end ();
   printf("before LCM bm end\n");

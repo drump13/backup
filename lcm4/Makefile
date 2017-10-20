@@ -1,6 +1,6 @@
 CXX = g++
 CC = gcc
-CFLAGS = -c 
+CFLAGS = -c -g -O0
 CXXFLAGS = -c  -std=c++11
 
 CSOURCES = \

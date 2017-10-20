@@ -5,9 +5,6 @@
 //#include "SCCA_Miner.cpp"
 //#include "SCC_Path_Miner.cpp"
 #include "SCC_Miner.cpp"
-#include "lcm_cpp/lcm.h"
-
-
 
 static int MIN_SUP = 2;
 

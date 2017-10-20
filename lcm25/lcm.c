@@ -223,7 +223,6 @@ int LCMclosed_iter ( ARY *T, int item, int prv ){
   ii = LCM_jump_rm_infreq (&LCM_Occ, &LCM_jump, LCM_th, LCM_frq, &LCM_itemset);
   if ( ii > item ){ flag = ii; goto END2; }  /* itemset is not closed */
   LCM_solution ();
-//  if ( LCM_itemset.q[0] >= LCM_Eend ) printf (" okasii \n");
   for ( i=itemt ; i<LCM_itemset.t ; i++ )
       LCM_VBM_trsact[LCM_itemset.q[i]] &= 0x7fffffff;
   if ( QUEUE_LENGTH(LCM_jump)==0 ) goto END2;   /* no rec.call */
@@ -287,8 +286,11 @@ void LCMclosed (){
     LCM_occ[i].end = 0;
   }
   for ( i=0 ; i<LCM_Eend ; i++ ){
-    if ( LCM_occ[i].s >= LCM_th )
-        LCMclosed_iter ( &LCM_Trsact, i, -1 );
+    if ( LCM_occ[i].s >= LCM_th ){
+      printf("in lcm closed %d\n",i);
+      LCMclosed_iter ( &LCM_Trsact, i, -1 );
+      printf("after lcm closed \n");
+    }
     LCM_occ[i].t = LCM_occ[i].end = 0;
   }
   LCM_iters++;
@@ -299,15 +301,20 @@ void Mine_Closed_Itemsets(int min_sup){
   char* input_file = "DB.txt";
   char* output_file = "out.txt";
   LCM_init(input_file,min_sup,output_file);
-  
-  if ( LCM_occ[0].end == LCM_Trsact_num ) f = 0;
+  printf("hogehoge\n");
+  //  if ( LCM_occ[0].end == LCM_Trsact_num ) f = 0;
   malloc2 ( LCM_VBM_trsact, long, LCM_Eend, "main", "LCM_VBM_trsact");
+
   for ( i=0 ; i<LCM_Eend ; i++ ){
     LCM_add.q[i+LCM_Eend] = -1;
     LCM_VBM_trsact[i] = 0x80000000;
   }
+  printf("hogehoge\n");
   LCMclosed ();
-  LCM_output ( f );
+  printf("hogehoge\n;");
+  LCM_output ( 1 );
+
+  printf("hogehoge\n;");
   LCM_end ();
 
   free2 ( LCM_VBM_trsact );

@@ -29,22 +29,13 @@ int main(){
   vector<Tree*> trees = db->get_subtree_list(subtree);
   
   EnumerationTree* et = gen_enumeration_tree(subtree,NULL,trees); 
-  //  et->print_tree();
-  //cout << " --------------------" << endl;
-  //et = et->expand_occurrence_matched();
-  //cout << "ok" << endl;
-  //et->print_tree();
-//cout << tree->is_subtree(subtree) << endl;
-   //cout << "enumeration_tree" << endl;
-  //  et->print_tree();
-
   cout << "SCC_Miner start !!!!!" << endl;
 
-  // vector<EnumerationTree*> result = SCC_Miner(db,et,MIN_SUP);
-  vector<EnumerationTree*> result = SCC_Miner_Improved(db,et,MIN_SUP);
+  vector<EnumerationTree*> result = SCC_Miner(db,et,MIN_SUP);
   cout << "closed tree size is" << result.size() << endl; 
-  // result = SCC_Path_Miner(db,et,MIN_SUP);
-  result = SCC_Miner(db,et,MIN_SUP);
+  result = SCC_Miner_Improved(db,et,MIN_SUP);
+  cout << "closed tree size is" << result.size() << endl; 
+  result = SCC_Path_Miner(db,et,MIN_SUP);
   cout << "closed tree size is " << result.size() << endl;
   for(int i = 0 , n = result.size() ; i<n; i++){
     cout << result[i]->get_tree_string() << endl;

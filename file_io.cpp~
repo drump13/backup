@@ -1,6 +1,5 @@
 #include "file_io.h"
 
-
 /*
 @brief LCMに渡すファイルを生成する
 @param RG-Treeを走査して得られたitem_vectorのvector
@@ -73,7 +72,7 @@ vector<CP*> read_CP_from_LCM_ver2_result(RGTree* rgtree){
     cerr << "file input is failed" << endl;
   }
   string s;
-  vector<vector<int>> ids_lists;
+  vector<vector<int>> id_lists;
   while(getline(ifs,s)){
     vector<string> sv = split(s,' ');
     vector<int> current;
@@ -81,11 +80,11 @@ vector<CP*> read_CP_from_LCM_ver2_result(RGTree* rgtree){
       current.push_back(stoi(sv[i]));
     }
     sort(current.begin(),current.end());
-    id_lists.push_back();
+    id_lists.push_back(current);
   }
   vector<CP*> result;
   for(int i = 0 , n = id_lists.size();i<n;i++){
-    vector<int> occ = filter_rgtree_occurrence(id_lists[i],rgtree->item_list);
+    vector<int> occ = rgtree->filter_rgtree_occurrence(id_lists[i],rgtree->item_list);
     result.push_back(new CP(id_lists[i],occ));
   }
   return result;

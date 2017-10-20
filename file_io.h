@@ -6,8 +6,8 @@
 #include "tree.h"
 
 static string INPUT_FILE = "input.txt";
-static string EXCHANGE_OUT_FILE = "DB.txt";
-static string EXCHANGE_IN_FILE = "out.txt";
+static string EXCHANGE_OUT_FILE = "lcm53/DB.txt";
+static string EXCHANGE_IN_FILE = "lcm53/out.txt";
 static string OUTPUT_FILE = "output.txt";
 static string CS_LOGS = "cslogs.asc";
 

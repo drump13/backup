@@ -4,12 +4,13 @@ CFLAGS = -c
 CXXFLAGS = -c  -std=c++11
 
 CSOURCES = \
-	lcm25/lcm.c 
+	lcm53/lcm.c 
 
 CXXSOURCES = \
 	tree.cpp \
 	file_io.cpp\
-	debug.cpp 
+	debug.cpp\
+#	lcm_cpp/lcm.cpp
 
 OBJECT = \
 	tree.o\

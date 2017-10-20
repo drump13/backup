@@ -760,17 +760,19 @@ vector<EnumerationTree*> SCC_Path_Miner(TreeDB* db,EnumerationTree* constrainedT
   cout << "before convert rprg list" << endl; 
   vector<vector<int>> r = convert(convert_rprg_list(rprg_list));
 
+
+  //公開されているLCMの呼び出し  
   /*
-  cout <<"write_file_to_item_transactions " << endl;
   write_file_to_item_transactions(r);
   cout << "before lcm" << endl;
   Mine_Closed_Itemsets(minimum_support);
   cout << "after lcm" << endl;
+  r = read_result_of_lcm();
   */
-
+  //自作LCM
   r = Mine_Closed_Itemsets(r,minimum_support);
 
-  //  r = read_result_of_lcm();
+
   for(int i = 0,n = r.size();i<n;i++){
     result.push_back(merge_item_result(r[i],rprg_list));
   }

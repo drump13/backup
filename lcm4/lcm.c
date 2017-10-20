@@ -199,7 +199,7 @@ int *inverse_perm ( int *perm, int end ){
 /* permute array of struct according to permutation */
 void perm_struct ( void *a, int unit, int *perm, int siz ){
   int i;
-  char *s, *ss = a;
+  char *s, *ss = (char*) a;
   malloc2 ( s, char, unit*siz, "perm_struct:s" );
   memcpy ( s, ss, unit*siz );
   for ( i=0 ; i<siz ; i++ )
@@ -311,7 +311,7 @@ void ARY_exp_const ( ARY *A, int num, int c ){
   ARY_exp ( A, num );
   for ( p=A->h ; end<A->end ; end++ ){
     // x = (int)p + A->unit*end;
-    x = p + A->unit*end;
+    x = (int*)p + A->unit*end;
     *x = c;
   }
 }
@@ -361,7 +361,7 @@ int ARY_new ( ARY *A ){
 /***********************************/
 void TRSACT_print ( ARY *T ){
   int i, j, e;
-  QUEUE *Q = T->h;
+  QUEUE *Q = (QUEUE*) T->h;
   for ( i=0 ; i<T->num ; i++ ){
     for ( j=0 ; j<Q[i].t ; j++ ){
       e = Q[i].q[j];
@@ -376,7 +376,7 @@ void TRSACT_print ( ARY *T ){
 /***********************************/
 void TRSACT_subprint ( ARY *T, QUEUE *occ ){
   int i, j, e, t;
-  QUEUE *Q = T->h;
+  QUEUE *Q = (QUEUE*) T->h;
   for ( i=0 ; i<occ->t ; i++ ){
     t = occ->q[i];
     printf ("%d:: ", t);
@@ -455,7 +455,7 @@ ARY TRSACT_file_count ( char *fname, int *Tnum, int *maxT){
 /* set *Enum to # frequent items */
 /***********************************/
 int *TRSACT_perm_freq_item ( ARY *E, int th, int *num, int *Enum ){
-  int *Eq = E->h, *perm, i;
+  int *Eq = (int*) E->h, *perm, i;
   *num = 0;
   *Enum = 0;
   malloc2 ( perm, int, E->num*2, "TRSACT_perm_freq_item: perm");
@@ -483,8 +483,8 @@ int *TRSACT_perm_freq_item ( ARY *E, int th, int *num, int *Enum ){
 /* set *T to the transactions loaded from file */
 /***********************************/
 void TRSACT_load ( char *fname, ARY *T, ARY *E, int *ibuf ){
-  int i, j, item, *Eq=E->h, num;
-  QUEUE *Q = T->h;
+  int i, j, item, *Eq= (int*) E->h, num;
+  QUEUE *Q = (QUEUE*)T->h;
   FILE2 fp;
   
   FILE2_read_open ( &fp, fname );
@@ -536,7 +536,7 @@ void TRSACT_load ( char *fname, ARY *T, ARY *E, int *ibuf ){
 /* RETURN: ID of a transaction of minimum size     */
 /***************************************************/
 int TRSACT_find_minsiz (ARY *T, QUEUE *occ){
-  QUEUE *Q = T->h;
+  QUEUE *Q = (QUEUE*) T->h;
   int i, t, tt=-1, m=1999999999;
   for ( i=0 ; i<occ->t ; i++ ){
     t = occ->q[i];
@@ -552,7 +552,7 @@ int TRSACT_find_minsiz (ARY *T, QUEUE *occ){
 /***************************************************/
 void TRSACT_load_weight (ARY *T, char *fname){
   int i=0, ii=0, w=0, item, num=0;
-  QUEUE *Q = T->h;
+  QUEUE *Q = (QUEUE*)T->h;
   FILE *fp;
   
   fopen2r ( fp, fname, "TRSACT_load_weight");
@@ -575,7 +575,7 @@ void TRSACT_load_weight (ARY *T, char *fname){
 
 void TRSACT_remove_nil_trsact ( ARY *T ){
   int i, ii;
-  QUEUE *Q = T->h;
+  QUEUE *Q = (QUEUE*)T->h;
   for ( i=ii=0 ; i<T->num ; i++ )
       if ( Q[i].end != 0 ){ Q[ii]=Q[i]; ii++; }
   T->num = ii;
@@ -634,7 +634,7 @@ void LCM_shrink_get_item (QUEUE *Q, int t, int v, int max_item, QUEUE *jump){
 /*************************************************************************/
 void LCM_shrink ( ARY *T, QUEUE *occ, int *result, int max_item ){
   int i, e, t, tt, ttt, v, vv, k, v_new, Eend_top;
-  QUEUE *Q = T->h, *jump1=&LCM_shrink_jump1, *jump2 = &LCM_shrink_jump2;
+  QUEUE *Q = (QUEUE*)T->h, *jump1=&LCM_shrink_jump1, *jump2 = &LCM_shrink_jump2;
   int *p = LCM_shrink_p, *q=LCM_shrink_p+LCM_Eend+1;
   jump1->t = 1; jump2->t = 0;
 
@@ -696,7 +696,7 @@ void LCM_shrink ( ARY *T, QUEUE *occ, int *result, int max_item ){
       }
     }
     END3:;
-    SWAP_PNT (jump1, jump2);
+    SWAP_QUEUE_PNT (jump1, jump2);
     Eend_top = p[LCM_Eend];
       /* clear the head of the lists */
     QUEUE_FE_LOOP_ (*jump1, i, e){
@@ -718,7 +718,7 @@ void LCM_shrink ( ARY *T, QUEUE *occ, int *result, int max_item ){
 /**********************************************************************/
 void LCM_add_same_transactions (ARY *T, int *result, QUEUE *occ){
   int i, ii=0, t, tt;
-  QUEUE *Q=T->h;
+  QUEUE *Q=(QUEUE*)T->h;
   for ( i=0 ; i<occ->t ; i++ ){
     t = occ->q[i];
     if ( (tt=result[t])>=0 ){
@@ -765,7 +765,7 @@ void LCM_copy_transaction(QUEUE *Q, int tt, int t, int item, QUEUE_INT **p){
 void LCM_merge_same_transactions (ARY *T, int *result, QUEUE *occ, int item, int *t_new, QUEUE_INT **p){
   int i, ii=0, t, tt, ttt, tt_new = *t_new;
   int max_item = LCM_Eend;
-  QUEUE *Q = T->h;
+  QUEUE *Q = (QUEUE*)T->h;
   QUEUE_INT *x;
 
   for ( i=0 ; i<occ->t ; i++ ){
@@ -803,7 +803,7 @@ void LCM_merge_same_transactions (ARY *T, int *result, QUEUE *occ, int item, int
 void LCM_occurrence_deliver(ARY *T, QUEUE *occ, QUEUE_INT max_item){
   int i, t;
   QUEUE_INT *x;
-  QUEUE *Q = T->h, *QQ = LCM_Occ.h;
+  QUEUE *Q = (QUEUE*)T->h, *QQ = (QUEUE*)LCM_Occ.h;
   for ( i=0 ; i<occ->t ; i++ ){
     t = occ->q[i];
     for ( x=Q[t].q ; *x<max_item ; x++ ){
@@ -814,7 +814,7 @@ void LCM_occurrence_deliver(ARY *T, QUEUE *occ, QUEUE_INT max_item){
 void LCM_frequency_counting (ARY *T, QUEUE *occ, QUEUE_INT max_item){
   int i, t, m;
   QUEUE_INT *x;
-  QUEUE *Q = T->h, *QQ = LCM_Occ.h;
+  QUEUE *Q = (QUEUE*)T->h, *QQ = (QUEUE*)LCM_Occ.h;
   for ( i=0 ; i<occ->t ; i++ ){
     t = occ->q[i];
     m = Q[t].end;
@@ -828,7 +828,7 @@ void LCM_frequency_counting (ARY *T, QUEUE *occ, QUEUE_INT max_item){
 int LCM_maximality_check (ARY *T, QUEUE *occ, QUEUE_INT item){
   int i, ii, t, m, flag=1;
   QUEUE_INT *x;
-  QUEUE *Q = T->h, *QQ = LCM_Occ.h;
+  QUEUE *Q = (QUEUE*)T->h, *QQ = (QUEUE*)LCM_Occ.h;
   for ( i=0 ; i<LCM_itemset.t ; i++ ){
     ii = LCM_itemset.q[i];
     if ( ii>item ) LCM_maxfreq[ii] = -LCM_Trsact_num;
@@ -857,7 +857,7 @@ int LCM_maximality_check (ARY *T, QUEUE *occ, QUEUE_INT item){
 /*************************************************************************/
 int LCM_rm_infreq (QUEUE *add){
   QUEUE_INT e;
-  QUEUE *Q = LCM_Occ.h;
+  QUEUE *Q = (QUEUE*)LCM_Occ.h;
   int i, ii=LCM_jump.s, m=0;
   QUEUE_FE_LOOP_ ( LCM_jump, i, e ){
     if ( Q[e].end >= LCM_th ){
@@ -925,7 +925,7 @@ int qsort_QUEUEt_cmp ( const void *x, const void *y ){
 void LCM_bitmap_ppc_init ( ARY *T, QUEUE *occ ){
   int i, y, ii, qt=LCM_add.t;
   QUEUE_INT *x;
-  QUEUE *Q = T->h;
+  QUEUE *Q = (QUEUE*)T->h;
   
   qsort ( occ->q, occ->t, sizeof(int), qsort_QUEUEt_cmp );
   for ( i=0 ; i<occ->t ; i++ )
@@ -946,7 +946,7 @@ void LCM_bitmap_ppc_init ( ARY *T, QUEUE *occ ){
 /* if (flag&4) use bitmap for checking (bitmap_pcc) */
 /*************************************************************************/
 int LCM_ppc_check (ARY *T, QUEUE *occ, int item, int flag){
-  QUEUE *Q = T->h;
+  QUEUE *Q = (QUEUE*)T->h;
 //  int i, t, e, m, min_t = TRSACT_find_minsiz (&LCM_Trsact, occ);
   int i, t, e, m, min_t = occ->q[occ->t-1];
   QUEUE_INT *x, *xx;
@@ -1035,7 +1035,7 @@ void LCM_BM_occurrence_delete (int item){
 /* LCM_jump.t-LCM_jump.s must be positive */
 void LCM_BM_occurrence_deliver_init (ARY *T, QUEUE *occ, int item){
   int e, p, i, ii, j, mask = BITMASK_LOWER1[LCM_BM_MAXITEM], *t, *tt;
-  QUEUE *TQ=T->h;
+  QUEUE *TQ=(QUEUE*)T->h;
   QUEUE_INT *x;
   for ( j=0,i=LCM_jump.t-1,ii=LCM_added->t-1 ; i>=LCM_jump.s ; i-- ){
     e = LCM_jump.q[i];
@@ -1264,10 +1264,10 @@ void LCM_init (){
     //exit (0);
 	return;
   }
-  LCM_trsact = LCM_Trsact.h;
+  LCM_trsact = (QUEUE*)LCM_Trsact.h;
   ARY_init ( &LCM_Occ, sizeof(QUEUE) );
   ARY_exp ( &LCM_Occ, LCM_Eend-1 );
-  LCM_occ = LCM_Occ.h;
+  LCM_occ = (QUEUE*)LCM_Occ.h;
   for ( i=0 ; i<LCM_Eend ; i++ ){
     LCM_occ[i].s = LCM_occ[i].t = 0;
     LCM_occ[i].end = 1;

@@ -160,6 +160,9 @@ void *swap_tmp_pointer;
 #define SWAP_DOUBLE(a,b)  (swap_tmp_double=a,a=b,b=swap_tmp_double)
 #define SWAP_CHAR(a,b)  (swap_tmp_char=a,a=b,b=swap_tmp_char)
 #define SWAP_PNT(a,b)  (swap_tmp_pointer=(void *)a,a=b,b=swap_tmp_pointer)
+#define SWAP_INT_PNT(a,b) (swap_tmp_pointer=(void *)a,a=b,b=(int*)swap_tmp_pointer) 
+#define SWAP_LONG_PNT(a,b) (swap_tmp_pointer=(void *)a,a=b,b=(long*)swap_tmp_pointer)
+#define SWAP_QUEUE_PNT(a,b) (swap_tmp_pointer=(void *)a,a=b,b=(QUEUE*)swap_tmp_pointer)
 
 /* macros for QUEUE operation */
 #define QUEUE_LENGTH(Q) ((Q).t-(Q).s)

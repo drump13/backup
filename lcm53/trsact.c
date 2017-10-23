@@ -423,6 +423,7 @@ void TRSACT_load (TRSACT *T){
   FILE_COUNT C = INIT_FILE_COUNT;
   VEC_ID t=0;
   int f;
+
   FILE2_open (fp, T->fname, "r", EXIT);
   if ( T->fname2 ) FILE2_open (fp2, T->fname2, "r", EXIT);
   TRSACT_file_count (T, &C, &fp, T->wfname);                if (ERROR_MES) goto END;
@@ -437,7 +438,6 @@ void TRSACT_load (TRSACT *T){
   FILE2_close (&fp);
   FILE2_close (&fp2);
   if (ERROR_MES) TRSACT_end (T); else TRSACT_prop_print (T);
-
   return;
 }
 

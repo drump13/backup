@@ -12,6 +12,7 @@ int main(){
   // vector<string> sv = split("0 3 3 -1 3 -1 -1 4",' ');
   
   //  Tree* tree = new Tree(sv,0,NULL);
+  
 
   Tree* tree1 = make_tree("0 2 3 6 -1 -1 1 5 -1 -1 4 5 -1 -1 6 -1 -1 -1");
   Tree* tree2 = make_tree("2 6 -1 3 5 -1 -1 1 5 -1 -1 4 6 -1 -1 -1");
@@ -27,17 +28,20 @@ int main(){
   
   EnumerationTree* et = gen_enumeration_tree(subtree,NULL,trees); 
   cout << "SCC_Miner start !!!!!" << endl;
-
   vector<EnumerationTree*> result = SCC_Miner(db,et,MIN_SUP);
   cout << "closed tree size is" << result.size() << endl; 
+  
+  cout << "SCC_Miner_Improved start!!!!" << endl;
   result = SCC_Miner_Improved(db,et,MIN_SUP);
   cout << "closed tree size is" << result.size() << endl; 
+ 
   result = SCC_Path_Miner(db,et,MIN_SUP);
   cout << "closed tree size is " << result.size() << endl;
   for(int i = 0 , n = result.size() ; i<n; i++){
     cout << result[i]->get_tree_string() << endl;
     cout << " ------- " << endl;
-}
+  }
+
   //  cout << " --";
   //result[6]->print_tree();
   

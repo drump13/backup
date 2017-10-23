@@ -476,9 +476,9 @@ vector<RPTree*> get_root_candidates(RPTree* rptree,RPTree* rproot,bool is_improv
 
   //occ(rp-node)を包含するrp-node2があればrp-node以下を削除かつ見ない
   if(is_improved && is_exist_occurrence_included(rptree,rproot)){
-    //    cout << "before rm_dec in rp cutter" << endl;
+    cout << "before rm_dec in rp cutter" << endl;
     rptree->rm_dec();
-    //cout << "after rm_dec in rp cutter" << endl;
+    cout << "after rm_dec in rp cutter" << endl;
     return root_candidates;
   }
 
@@ -646,7 +646,7 @@ vector<EnumerationTree*> SCC_Miner(TreeDB* db,EnumerationTree* constrainedTree, 
     cout << " -----end -------" << endl;*/
 
     
-    cout <<"closed pattern is "<<closed_patterns.size() << endl; 
+    //    cout <<"closed pattern is "<<closed_patterns.size() << endl; 
     for(int j = 0 , m = closed_patterns.size();j<m;j++){
       
       if(!is_there_occurrence_matched(root_candidates[i],closed_patterns[j])){
@@ -683,7 +683,7 @@ vector<EnumerationTree*> SCC_Miner_Improved(TreeDB* db, EnumerationTree* constra
   RPTree* rp_tree = new RPTree(constrainedTree->get_node()->label,oc_list);
   exp_rp_tree(rp_tree,minimum_support);
   rp_tree->reindexing(0);  
-  
+  rp_tree->print_tree();
   cout << "before get_root" << endl;
   vector<RPTree*> root_candidates = get_root_candidates(rp_tree,rp_tree,true);
   cout << "after get_root : " <<root_candidates.size()  << endl;
@@ -752,13 +752,13 @@ vector<EnumerationTree*> SCC_Path_Miner(TreeDB* db,EnumerationTree* constrainedT
   //print_POCCL_list(p);
   cout << "before rprglist" << endl;
   vector<RPRGPathItem*> rprg_list = enum_rprg_item_list(p,minimum_support,true);
-  cout << "----------- rprg path item list ------------" << endl;
-  //print_RPRG_path_item_list(rprg_list);
-  cout << "---------------------------------------------" << endl;
+  //cout << "----------- rprg path item list ------------" << endl;
+  
+  //cout << "---------------------------------------------" << endl;
   //  cout <<"rprg_list size is "<< rprg_list.size() << endl;
   cout << "before convert rprg list" << endl; 
-  vector<vector<int>> r = convert(convert_rprg_list(rprg_list));
-
+  vector<vector<int>> r = convert_rprg_list(rprg_list);
+  cout << "after convert" << endl;
 
   //他LCMの呼び出し  
   write_file_to_item_transactions(r);
@@ -770,10 +770,10 @@ vector<EnumerationTree*> SCC_Path_Miner(TreeDB* db,EnumerationTree* constrainedT
   //自作LCM
   //r = Mine_Closed_Itemsets(r,minimum_support);
 
-
   for(int i = 0,n = r.size();i<n;i++){
     result.push_back(merge_item_result(r[i],rprg_list));
   }
+  cout << "after_merge "<<endl;
   return result;
 }
 

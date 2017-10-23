@@ -139,18 +139,12 @@ void PROBLEM_load (PROBLEM *P){
   ITEMSET *II = &P->II;
 /******************************/
 #ifdef _trsact_h_
-  if ( P->TT.fname ){ TRSACT_load (&P->TT);       if (ERROR_MES) goto ERR;}
+  if ( P->TT.fname ){ TRSACT_load (&P->TT);       if (ERROR_MES) goto ERR; }
   if ( P->TT2.fname ){ TRSACT_load (&P->TT2);       if (ERROR_MES) goto ERR; }
-  printf("out trsact \n");
 #endif
-  /*
 #ifdef _sgraph_h_
-  printf("kokomade okokokok\n");
-  if ( P->SG.fname ){ 
-    printf("kokode sg ha okasikune \n");
-SGRAPH_load (&P->SG);    if (ERROR_MES) goto ERR; }
+  if ( P->SG.fname ){ SGRAPH_load (&P->SG);    if (ERROR_MES) goto ERR; }
   if ( P->SG2.fname ){ SGRAPH_load (&P->SG);    if (ERROR_MES) goto ERR; }
-  printf("in trsact okok \n"); 
 #endif
 #ifdef _agraph_h_
   if ( P->AG.fname ){ AGRAPH_load (&P->AG);    if (ERROR_MES) goto ERR;}
@@ -160,10 +154,8 @@ SGRAPH_load (&P->SG);    if (ERROR_MES) goto ERR; }
   if ( P->FS.fname ){ FSTAR_load (&P->FS);    if (ERROR_MES) goto ERR; }
   if ( P->FS2.fname ){ FSTAR_load (&P->FS2);     if (ERROR_MES) goto ERR; }
 #endif
-  printf("kokomade ha ok kana \n");
-
 #ifdef _vec_h_
-if ( P->MM.fname ){ MAT_load (&P->MM);   if (ERROR_MES) goto ERR; }
+  if ( P->MM.fname ){ MAT_load (&P->MM);   if (ERROR_MES) goto ERR; }
   if ( P->MM2.fname ){ MAT_load (&P->MM2);    if (ERROR_MES) goto ERR; }
   if ( P->SM.fname ){ SMAT_load (&P->SM);    if (ERROR_MES) goto ERR; }
   if ( P->SM2.fname ){ SMAT_load (&P->SM2);    if (ERROR_MES) goto ERR; }
@@ -184,13 +176,11 @@ if ( P->MM.fname ){ MAT_load (&P->MM);   if (ERROR_MES) goto ERR; }
   if ( P->BA.fname ){ BARRAY_load (&P->BA);    if (ERROR_MES) goto ERR; }
   if ( P->BA2.fname ){ BARRAY_load (&P->BA2);    if (ERROR_MES) goto ERR; }
 #endif
-  printf("before input fname\n");
   if (P->input_fname){ f=1; print_mes (II, " input: %s", P->input_fname); }
-  printf("after input fname \n");
   if (P->weight_fname){ f=1; print_mes (II, " weight: %s", P->weight_fname); }
   if (P->output_fname){ f=1; print_mes (II, " output to: %s",P->output_fname); }
   if ( f ) print_mes (II, "\n");
-  */
+
 /******************************/
 
   if ( !ERROR_MES ) return;

@@ -25,7 +25,7 @@
 #include"trsact.c"
 #include"sgraph.c"
 #include"problem.c"
-#include"lcm.h"
+
 void LCM_error (){
   ERROR_MES = "command explanation";
   print_err ("LCM: [FCMfQIq] [options] input-filename support [output-filename]\n\
@@ -65,15 +65,14 @@ t:transpose the input database (item i will be i-th transaction, and i-th transa
 /***********************************************************************/
 /*  read parameters given by command line  */
 /***********************************************************************/
-void LCM_read_param (int minimum_support,PROBLEM *PP/*int argc, char *argv[], PROBLEM *PP*/){
+void LCM_read_param (int argc, char *argv[], PROBLEM *PP){
   ITEMSET *II = &PP->II;
   int c=1, f=0;
-//  if ( argc < c+3 ){ LCM_error (); return; }
-   PP->problem |= PROBLEM_CLOSED;
-    PP->TT.flag |= TRSACT_INTSEC;
-/**  if ( !strchr (argv[c], '_') ){ II->flag |= SHOW_MESSAGE; PP->TT.flag |= SHOW_MESSAGE; }
+  if ( argc < c+3 ){ LCM_error (); return; }
+  
+  if ( !strchr (argv[c], '_') ){ II->flag |= SHOW_MESSAGE; PP->TT.flag |= SHOW_MESSAGE; }
   if ( strchr (argv[c], '%') ) II->flag |= SHOW_PROGRESS;
-  if ( strchr (argv[c], '+') ) II->flag |= ITEMSET_APPEND;
+  if ( strchr (argv[c], '+') ) II->flag |= ITEMSET_APPEND;
   if ( strchr (argv[c], 'f') ) II->flag |= ITEMSET_FREQ;
   if ( strchr (argv[c], 'Q') ) II->flag |= ITEMSET_PRE_FREQ;
   if ( strchr (argv[c], 'R') ) II->flag |= ITEMSET_RULE_ADD;
@@ -88,8 +87,7 @@ void LCM_read_param (int minimum_support,PROBLEM *PP/*int argc, char *argv[], PR
   if ( strchr (argv[c], 's') ) II->flag |= ITEMSET_RULE_SUPP;
   if ( strchr (argv[c], 't') ) PP->TT.flag |= LOAD_TPOSE;
   c++;
-  */
-    /*
+  
   while ( argv[c][0] == '-' ){
     switch (argv[c][1]){
       case 'K': if ( PP->problem & PROBLEM_MAXIMAL )
@@ -124,8 +122,7 @@ void LCM_read_param (int minimum_support,PROBLEM *PP/*int argc, char *argv[], PR
     c += 2;
     if ( argc < c+2 ){ LCM_error (); return; }
   }
-*/
-    /*
+
   NEXT:;
   if ( (f&3)==3 || (f&5)==5 || (f&6)==6 ) error ("-f, -F, -a, -A, -p, -P, -r and -R can not specified simultaneously", EXIT); 
   if ( f && (II->flag & ITEMSET_PRE_FREQ) ) BITRM (II->flag, ITEMSET_PRE_FREQ);
@@ -139,9 +136,7 @@ void LCM_read_param (int minimum_support,PROBLEM *PP/*int argc, char *argv[], PR
   }
   PP->TT.fname = argv[c];
   if ( II->topk.end==0 ) II->frq_lb = (WEIGHT)atof(argv[c+1]);
-  if ( argc>c+2 ) PP->output_fname = argv[c+2];*/
-    PP->TT.fname = "lcm53/DB.txt";
-    PP->output_fname = "lcm53/out.txt";
+  if ( argc>c+2 ) PP->output_fname = argv[c+2];
 }
 
 /*********************************************************************/
@@ -391,40 +386,14 @@ void LCM_init (PROBLEM *PP){
   II->total_weight = TT->total_w;
 }
 
-void Mine_Closed_Itemsets(int minimum_support){
-    PROBLEM PP;
-    ITEMSET *II = &PP.II;
-    TRSACT *TT = &PP.TT;
-    SGRAPH *SG = &PP.SG;
-
-    LCM_read_param(minimum_support,&PP);
- //   if ( ERROR_MES ) return (1);
-    
-    TT->flag |= LOAD_PERM +TRSACT_FRQSORT +LOAD_DECSORT +LOAD_RM_DUP +TRSACT_MAKE_NEW +TRSACT_DELIV_SC +TRSACT_ALLOC_OCC + ((II->flag & ITEMSET_TRSACT_ID)?0: (TRSACT_SHRINK+TRSACT_1ST_SHRINK)) ;
-    if ( II->flag&ITEMSET_RULE ) TT->w_lb = -WEIGHTHUGE; else TT->w_lb = II->frq_lb;
-    SG->flag =  LOAD_EDGE;
-    PROBLEM_load (&PP);
-    if ( !ERROR_MES ){
-        LCM_init (&PP);
-        if ( !ERROR_MES ) LCM (&PP, TT->T.clms, &PP.oo, TT->total_w_org, TT->total_pw_org);
-        ITEMSET_last_output (II);
-    }
-    
-    TT->sc = NULL;
-    PROBLEM_end (&PP);
-    
-}
-
 /*************************************************************************/
 /* main of LCM ver. 5 */
 /*************************************************************************/
-/*
 int LCM_main (int argc, char *argv[]){
   PROBLEM PP;
   ITEMSET *II = &PP.II;
   TRSACT *TT = &PP.TT;
   SGRAPH *SG = &PP.SG;
-  
   PROBLEM_init (&PP);
   LCM_read_param (argc, argv, &PP);
 if ( ERROR_MES ) return (1);
@@ -441,18 +410,26 @@ if ( ERROR_MES ) return (1);
   TT->sc = NULL;
   PROBLEM_end (&PP);
   return (ERROR_MES?1:0);
-}*/
+}
 
-/*******************************************************************************/
-/*#ifndef _NO_MAIN_
+void Mine_Closed_Itemsets(int min_sup){
+  char ms[10];
+  sprintf(ms,"%d",min_sup);
+  char* inp[]={"","C","DB.txt",ms,"out.txt"};
+  LCM_main(5,inp);
+
+
+}
+/******************************************************************************
+#ifndef _NO_MAIN_
 #define _NO_MAIN_
 int main (int argc, char *argv[]){
-    Mine_Closed_Itemsets(2);
-    return 0;
-//    return (LCM_main (argc, argv));
+  Mine_Closed_Itemsets(2);
+  return 0;
+  //return (LCM_main (argc, argv));
 }
-#endif*/
-/*******************************************************************************/
+#endif
+/******************************************************************************/
 
 #endif
 

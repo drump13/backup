@@ -297,7 +297,7 @@ double SQRT(double x);
 #ifdef _MSC_
  #define   fopen2(f,a,b,x)     do{fopen_s(&f,a,b);if(!f){ERROR_MES="file open error";fprintf(stderr,"file open error: file name %s, open mode %s\n",a,b);x;}}while(0)
 #else
-#define   fopen2(f,a,b,x)     do{if(!((f)=fopen(a,b))){ERROR_MES="file open error";fprintf(stderr,"file open error: file name %s, open mode %s\n",a,b);x;}}while(0)
+ #define   fopen2(f,a,b,x)     do{if(!((f)=fopen(a,b))){ERROR_MES="file open error";fprintf(stderr,"file open error: file name %s, open mode %s\n",a,b);x;}}while(0)
 #endif
 #define   FILE2_open(f,a,b,x) do{if(a)fopen2((f).fp,a,b,x);else(f).fp=NULL;malloc2((f).buf_org,FILE2_BUFSIZ+1,x);(f).buf=(f).buf_org;(f).buf_end=(f).buf_org-1;(f).bit=0;*(f).buf=0;}while(0)
 #define   FILE2_open_(f,a,x)  do{(f).fp=a;malloc2((f).buf_org,FILE2_BUFSIZ+1,x);(f).buf=(f).buf_org;(f).buf_end=(f).buf_org-1;(f).bit=0;*(f).buf=0;}while(0)

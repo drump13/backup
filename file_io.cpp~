@@ -7,14 +7,12 @@
 occurrenceのvectorにするためにまずは2次元配列の行と列を入れ替える操作を行う
 */
 void write_file_to_item_transactions(vector<vector<int>> tr){
-  cout << "before convert " << endl;
   vector<vector<int>> transactions = convert(tr);
-  cout << "before output file stream" << endl;
   ofstream output_file(EXCHANGE_OUT_FILE);
   cout << "before write " << endl;
   for(int i = 0,n=transactions.size(); i<n;i++){
     for(int j =0,m=transactions[i].size();j<m;j++){
-      output_file << transactions[i][j] << " ";
+      output_file << transactions[i][j]+1 << " ";
     }
     output_file << "\n";
   }
@@ -77,7 +75,7 @@ vector<CP*> read_CP_from_LCM_ver2_result(RGTree* rgtree){
     vector<string> sv = split(s,' ');
     vector<int> current;
     for(int i = 0 , n = sv.size();i<n;i++){
-      current.push_back(stoi(sv[i]));
+      current.push_back(stoi(sv[i])-1);
     }
     sort(current.begin(),current.end());
     id_lists.push_back(current);

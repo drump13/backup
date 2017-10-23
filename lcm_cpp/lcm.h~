@@ -1,0 +1,56 @@
+#ifndef LCM
+#define LCM
+
+#include<iostream>
+#include<vector>
+#include "../tree.h"
+#include "../file_io.h"
+
+class Itemset{
+ 
+public:
+  vector<int> items;
+  Itemset(vector<int> items);
+  vector<int> get_int_vec(){return items;}
+  Itemset* get_prefix(int i);
+  int get_tail();
+  bool is_included(vector<int> i);
+
+
+  // @debug
+  void print_items();
+  
+};
+
+class ItemsetDB{
+  vector<int> general_itemset;
+public:
+  vector<Itemset*> itemsets;
+  ItemsetDB(vector<vector<int>> itemsets);
+  vector<int> get_occurrences(vector<int> items);
+  vector<int> get_occ_intersection(vector<int> occ);
+  vector<int> get_closure(vector<int> itemset);
+  vector<int> get_fc_itemset_i(vector<int> itemset,int i);
+  vector<int> bigger_than_item(int item);
+  int get_minimum_item_of_same_occurrence(vector<int> items);
+  vector<int> get_next_items(int item,vector<int> current_fc_items);
+//debug
+  void print_general_itemset();
+};
+
+//お便利メソッド群 
+vector<int> get_intersection(vector<int> a,vector<int> b);
+vector<int> get_difference(vector<int> a,vector<int> b);
+bool is_same_vec(vector<int> a,vector<int> b);
+bool is_exist(vector<int> a,int item);
+//debug
+void print_vec(vector<int> a);
+void print_Itemset_vec(vector<Itemset*> i);
+
+vector<Itemset*> LCM_Algorithm(Itemset* fc_item,int min_sup,ItemsetDB* itemdb);
+
+vector<CP*> Mine_Closed_Pattern(vector<vector<int>> itemsets,int min_sup);
+vector<vector<int>> Mine_Closed_Itemsets(vector<vector<int>> itemsets,int min_sup);
+
+
+#endif //LCM

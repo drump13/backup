@@ -6,6 +6,7 @@
 #include <map>
 #include "tree.h"
 #include "file_io.h"
+#include "measure.h"
 //#include "lcm_cpp/lcm.h"
 
 
@@ -591,6 +592,47 @@ vector<CP*> get_cp_list_corresponding_to_ids(RGTree* rg_tree,vector<vector<int>>
  }
 
 
+/*
+@brief C言語で書かれたLCMの呼び出し
+@sa SCC_Miner SCC_Miner_Improved
+ */
+vector<CP*> callingLCM(vector<vector<int>> in ,int min_sup,RGTree* rg_tree){
+ //他LCMの呼び出し，ファイル入出力は時間に入れない  
+  algorithm_stop();
+  write_file_to_item_transactions(in);
+  //
+  algorithm_restart();
+  LCM_start();
+  Mine_Closed_Itemsets(min_sup);
+  algorithm_stop();
+  LCM_end();
+  vector<CP*> r = read_CP_from_LCM_ver2_result(rg_tree);    
+  algorithm_restart();
+  return r;
+}
+
+/*
+@brief C言語で書かれたLCMの呼び出し
+@sa SCC_Path_Miner
+ */
+vector<vector<int>> calling_LCM(vector<vector<int>> in,int min_sup){
+ //他LCMの呼び出し，ファイル入出力は時間に入れない  
+  algorithm_stop();
+  write_file_to_item_transactions(in);
+  //
+  algorithm_restart();
+  LCM_start();
+  Mine_Closed_Itemsets(min_sup);
+  algorithm_stop();
+  LCM_end();
+  vector<vector<int>> r = read_result_of_lcm();
+  algorithm_restart();
+  return r;
+}
+
+
+
+
  /*
 @brief SCC-Minerアルゴリズム本体
 @param1 db 木のデータベースへのポインタ
@@ -630,23 +672,16 @@ vector<EnumerationTree*> SCC_Miner(TreeDB* db,EnumerationTree* constrainedTree, 
     cout << "-----------------" << endl;
     cout << "minimum_support is " << minimum_support << endl;
     */
+
+
     //他作LCMの呼び出し
-    write_file_to_item_transactions(rg_tree->get_item_transaction());
-    cout << "LCM begin " << endl;
-    Mine_Closed_Itemsets(minimum_support);
-    cout << "LCM end " << endl;
-    vector<CP*> closed_patterns = read_CP_from_LCM_ver2_result(rg_tree);    
+    vector<CP*> closed_patterns = callingLCM(rg_tree->get_item_transaction(),minimum_support,rg_tree);
+  
     //自作LCM呼び出し
     /*    vector<vector<int>> vv =  convert(rg_tree->get_item_transaction());
     vector<vector<int>> id_lists = Mine_Closed_Itemsets(vv,minimum_support);
     vector<CP*> closed_patterns = get_cp_list_corresponding_to_ids(rg_tree,id_lists);    */
-
-    /* cout << " ------ closed itemsets ------" << endl;
-    print_vv(id_lists);
-    cout << " -----end -------" << endl;*/
-
     
-    //    cout <<"closed pattern is "<<closed_patterns.size() << endl; 
     for(int j = 0 , m = closed_patterns.size();j<m;j++){
       
       if(!is_there_occurrence_matched(root_candidates[i],closed_patterns[j])){
@@ -696,11 +731,9 @@ vector<EnumerationTree*> SCC_Miner_Improved(TreeDB* db, EnumerationTree* constra
     cout << "rg_tree size is " <<rg_tree->get_num_of_nodes() << endl;
     
     //他作LCM
-    write_file_to_item_transactions(rg_tree->get_item_transaction());
-    cout << "before LCM" <<  endl;
-    Mine_Closed_Itemsets(minimum_support);
-    cout << "after LCM" << endl;
-    vector<CP*> closed_patterns = read_CP_from_LCM_ver2_result(rg_tree);
+    vector<CP*> closed_patterns = callingLCM(rg_tree->get_item_transaction(),minimum_support,rg_tree);
+
+
     //自作
     /*    vector<vector<int>> vv =  rg_tree->get_item_transaction();
     vector<vector<int>> id_lists = Mine_Closed_Itemsets(convert(vv),minimum_support);
@@ -737,7 +770,6 @@ vector<EnumerationTree*> SCC_Path_Miner(TreeDB* db,EnumerationTree* constrainedT
   vector<Tree*> oc_list = db->get_subtree_list(constrainedTree);
   vector<EnumerationTree*> result;
   if(oc_list.size() < minimum_support){return result;}
-  //  RPTree* rp_tree = make_rp_tree(constrainedTree->get_node()->label,oc_list,minimum_support);
   RPTree* rp_tree = new RPTree(constrainedTree->get_node()->label,oc_list);
   exp_rp_tree(rp_tree,minimum_support);
   rp_tree->reindexing(0);
@@ -750,23 +782,19 @@ vector<EnumerationTree*> SCC_Path_Miner(TreeDB* db,EnumerationTree* constrainedT
   vector<Path_OCCL*> p = rp_tree->get_POCCL_list(dummy); 
   //cout<< p.size()<<endl;
   //print_POCCL_list(p);
-  cout << "before rprglist" << endl;
+  //cout << "before rprglist" << endl;
   vector<RPRGPathItem*> rprg_list = enum_rprg_item_list(p,minimum_support,true);
   //cout << "----------- rprg path item list ------------" << endl;
   
   //cout << "---------------------------------------------" << endl;
   //  cout <<"rprg_list size is "<< rprg_list.size() << endl;
-  cout << "before convert rprg list" << endl; 
+  //  cout << "before convert rprg list" << endl; 
   vector<vector<int>> r = convert_rprg_list(rprg_list);
-  cout << "after convert" << endl;
+  //  cout << "after convert" << endl;
 
-  //他LCMの呼び出し  
-  write_file_to_item_transactions(r);
-  cout << "before lcm" << endl;
-  Mine_Closed_Itemsets(minimum_support);
-  cout << "after lcm" << endl;
-  r = read_result_of_lcm();
+  r = calling_LCM(r,minimum_support);
  
+
   //自作LCM
   //r = Mine_Closed_Itemsets(r,minimum_support);
 

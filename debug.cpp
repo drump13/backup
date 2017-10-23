@@ -25,22 +25,44 @@ int main(){
   db->print_tree_db();
   Tree* subtree = make_tree("1 5 -1 -1");
   vector<Tree*> trees = db->get_subtree_list(subtree);
-  
+  vector<double> time_list, lcm_time_list;
   EnumerationTree* et = gen_enumeration_tree(subtree,NULL,trees); 
+
   cout << "SCC_Miner start !!!!!" << endl;
+  init_time();
+  algorithm_start();
   vector<EnumerationTree*> result = SCC_Miner(db,et,MIN_SUP);
+  algorithm_end();
+  time_list.push_back(get_algorithm_time());
+  lcm_time_list.push_back(get_LCM_time());
   cout << "closed tree size is" << result.size() << endl; 
   
+
   cout << "SCC_Miner_Improved start!!!!" << endl;
+  init_time();
+  algorithm_start();
   result = SCC_Miner_Improved(db,et,MIN_SUP);
+  algorithm_end();
+  time_list.push_back(get_algorithm_time());
+  lcm_time_list.push_back(get_LCM_time());
   cout << "closed tree size is" << result.size() << endl; 
  
+
+  init_time();
+  algorithm_start();
   result = SCC_Path_Miner(db,et,MIN_SUP);
+  algorithm_end();
+  time_list.push_back(get_algorithm_time());
+  lcm_time_list.push_back(get_LCM_time());
   cout << "closed tree size is " << result.size() << endl;
   for(int i = 0 , n = result.size() ; i<n; i++){
     cout << result[i]->get_tree_string() << endl;
     cout << " ------- " << endl;
   }
+
+  cout << "SCC_Miner : " << time_list[0] << "  lcm time " << lcm_time_list[0] << endl;
+  cout << "SCC_Miner_Improved : " << time_list[1] << "  lcm time " << lcm_time_list[1] << endl;
+  cout << "SCC_Path_Miner : " << time_list[2] << "  lcm time " << lcm_time_list[2] << endl;
 
   //  cout << " --";
   //result[6]->print_tree();

@@ -1,0 +1,337 @@
+#include "lcm.h"
+
+vector<Itemset*> FRCL_PATTERN;
+
+/*********************
+ここからアイテムセットクラスの定義
+@brief LCMに必要な関数群
+ ******************/
+
+/*
+@brief アイテムセットのコンストラクタ
+@param vec
+@detail
+vecはソートされている前提
+ */
+Itemset::Itemset(vector<int> vec){
+  for(int i = 0 ,n = vec.size();i<n;i++){
+    items.push_back(vec[i]);
+  }
+  
+}
+/*
+@brief X(i) = X and {1,2,...,i}
+@param i
+ */
+Itemset* Itemset::get_prefix(int i){
+  vector<int> v;
+  int k = 0;
+  int item_size = items.size();
+  while(items[k]<=i && k < item_size){
+    v.push_back(items[k]);
+    k++;
+  }
+  return new Itemset(v);
+}
+
+/*
+@brief 末尾のアイテムtail({1,2,...,k})=k
+*/
+int Itemset::get_tail(){
+  return items[items.size()-1];
+}
+/*
+@brief このアイテムが引数のアイテムを包含していたとき,trueを返す
+ */
+bool Itemset::is_included(vector<int> it){
+  vector<int> r;
+  set_intersection(items.begin(),items.end(),it.begin(),it.end(),back_inserter(r));
+  return r.size() == it.size();
+}
+
+//debug
+void Itemset::print_items(){
+  cout << "{";
+  for(int i = 0 , n = items.size();i<n;i++){
+    cout << items[i] << ",";
+  }
+  cout << "}" << endl;
+}
+
+
+
+/********************
+ここからアイテムセットDBクラスの定義
+@brief LCMに必要な関数群
+ ******************/
+ItemsetDB::ItemsetDB(vector<vector<int>> items){
+  for(int i =0,n = items.size();i < n ; i++){
+    Itemset* it = new Itemset(items[i]);
+    itemsets.push_back(it);
+  }
+  //general itemsetの生成
+  set<int> general;
+  for(int i=0,n = items.size();i<n;i++){
+    for(int j=0,m=items[i].size();j<m;j++){
+      general.insert(items[i][j]);
+    }
+  }
+  vector<int> g(general.begin(),general.end()); 
+  sort(g.begin(),g.end());
+  general_itemset = g;
+}
+
+
+/*
+@brief アイテムのリストを受け取って，そのリストを含むtransaction idを返す
+つまりoccurrence setを返す
+ */
+vector<int> ItemsetDB::get_occurrences(vector<int> items){
+  vector<int> result;
+  for(int i = 0 , n = itemsets.size();i<n;i++){
+    if(itemsets[i]->is_included(items)){
+      result.push_back(i);
+    }
+  }
+  return result;
+}
+
+
+/*
+@brief occurrenceで指定されたアイテムセットのandをとって返す
+@detail
+空のoccurrenceが渡されるときは，itemdb内に存在しないアイテムセットを返す
+ことでinfrequentであるということにする．
+ */
+vector<int> ItemsetDB::get_occ_intersection(vector<int> occurrences){
+  if(occurrences.size()==0){
+    vector<int> empty_occ_item;
+    empty_occ_item.push_back(general_itemset[general_itemset.size()-1]+1);
+    return empty_occ_item;
+  }
+  vector<int> result = itemsets[occurrences[0]]->items;
+  for(int i = 1 , n = occurrences.size();i < n; i++){
+    int co = occurrences[i];
+    result = get_intersection(result,itemsets[co]->items);
+  }
+
+  return result;
+}
+
+
+/*
+@brief そのアイテムセットのclosureを返す
+ */
+vector<int> ItemsetDB::get_closure(vector<int> itemsets){
+  /*  cout << "in get_closure print itemsets : ";
+  print_vec(itemsets);
+  cout << "in get_closure print occ : ";*/
+  //print_vec(get_occurrences(itemsets));
+  return get_occ_intersection(get_occurrences(itemsets));
+}
+
+
+/*
+@brief アイテムセットのoccurrenceが等しいX(i)の最小のアイテムを返す
+@param items
+@detail 擬似コード中のi(X)のこと
+ */
+int ItemsetDB::get_minimum_item_of_same_occurrence(vector<int> items){
+  vector<int> get_items_occurrence = get_occurrences(items);
+  int size = get_items_occurrence.size();
+  Itemset* its = new Itemset(items);
+  for(int i = 0 ,n = items.size();i<n;i++){
+    Itemset* ci = its->get_prefix(items[i]);
+    if(size == get_occurrences(ci->get_int_vec()).size()){
+      return items[i];
+    }
+  }
+  //空のアイテムの際は−1を返す
+  return -1;
+}
+
+/*
+@brief fc-pattern のlatticeのの1つ下の子を拾ってくる
+@param i
+@detail 論文中 X[i]= X or Hで定義されているやつ
+ */
+vector<int> ItemsetDB::get_fc_itemset_i(vector<int> fc_pattern,int item){
+  vector<int> result;
+  
+  for(int i = 0 , n = fc_pattern.size();i<n;i++){
+    result.push_back(fc_pattern[i]);
+  }
+ 
+  if(find(fc_pattern.begin(),fc_pattern.end(),item) == fc_pattern.end()){
+    result.push_back(item);
+    sort(result.begin(),result.end());
+  } 
+  vector<int> clos = get_closure(result);
+  vector<int> bigger = bigger_than_item(item);
+  vector<int> add = get_intersection(clos,bigger);
+  result.insert(result.end(),add.begin(),add.end());
+  set<int> r_set(result.begin(),result.end());
+  vector<int> r_vec(r_set.begin(),r_set.end());
+  sort(r_vec.begin(),r_vec.end());
+  return r_vec;
+}
+
+
+/*
+@brief general_itemsetの中からitemより大きいアイテムを全て返す
+@param item
+ */
+vector<int> ItemsetDB::bigger_than_item(int item){
+  vector<int> result;
+  for(int i = 0 , n = general_itemset.size();i < n ;i++){
+    if(item < general_itemset[i]){
+      result.push_back(general_itemset[i]);
+    }
+  }
+  return result;
+}
+
+vector<int> ItemsetDB::get_next_items(int item , vector<int> current_fc_items){
+  vector<int> b = bigger_than_item(item);
+  vector<int> result;
+  set_difference(b.begin(),b.end(),current_fc_items.begin(),current_fc_items.end(),back_inserter(result));
+  return result;
+}
+
+//debug
+void ItemsetDB::print_general_itemset(){
+  cout << "{";
+  for(int i = 0 ,n = general_itemset.size();i<n;i++){
+    cout << general_itemset[i]<< ",";
+  }
+  cout << "}" << endl;
+}
+
+
+/******************
+以下，お便利メソッド群
+ ****************/
+/*
+  @brief 2つのリストのandを返す
+ */
+vector<int> get_intersection(vector<int> a,vector<int> b){
+  vector<int> r;
+  set_intersection(a.begin(),a.end(),b.begin(),b.end(),back_inserter(r));
+  return r;
+}
+/*
+@brief 2つのリストの差を返す
+ */
+vector<int> get_difference(vector<int> a,vector<int> b){
+  vector<int> r;
+  set_difference(a.begin(),a.end(),b.begin(),b.end(),back_inserter(r));
+  return r;
+}
+
+/*
+@brief2個のリストが同じものかどうかを返す，同じならtrue
+*/
+bool is_same_vec(vector<int> a,vector<int> b){
+  vector<int> r;
+  set_intersection(a.begin(),a.end(),b.begin(),b.end(),back_inserter(r));
+  return r.size() ==a.size() && r.size() == b.size();
+}
+
+/*
+@brief vector aの中にitemが存在していればtrue,していなければfalse
+ */
+bool is_exist(vector<int> a, int item){
+  if(a.size() == 0){return false;}
+  return find(a.begin(),a.end(),item) == a.end() && a[a.size()-1] != item;
+}
+
+//debug
+void print_vec(vector<int> a){
+  cout << "{" ;
+  for(int i = 0,n= a.size();i<n;i++){
+    cout<< a[i] << ",";
+  }
+  cout << "}" << endl;
+}
+
+//debug
+void print_v_v(vector<vector<int>> a){
+    for(int i = 0 , n = a.size();i<n;i++){
+      cout << " {" ;
+      for(int j = 0, m = a[i].size();j<m;j++){
+	cout << a[i][j] << ",";
+      }
+      cout << "}" << endl;
+    }
+}
+
+//debug
+void print_Itemset_vec(vector<Itemset*> items_vec){
+  for(int i = 0, n = items_vec.size(); i < n ; i++){
+    cout << i << " : " ;
+    items_vec[i]->print_items();
+  }
+}
+
+
+/****アルゴリズム本体*****/
+void LCM_Algorithm(Itemset* fc_item,int min_sup,ItemsetDB* itemdb){
+  if(fc_item->get_int_vec().size() !=0){
+    FRCL_PATTERN.push_back(fc_item);
+  }
+  vector<int> next_items = itemdb->get_next_items(itemdb->get_minimum_item_of_same_occurrence(fc_item->get_int_vec()),fc_item->get_int_vec());
+  //  cout << "next_items:" ;
+  //print_vec(next_items);
+
+  for(int i = 0 , n = next_items.size();i<n;i++){
+    vector<int> X_i = itemdb->get_fc_itemset_i(fc_item->get_int_vec(),next_items[i]);
+
+    if(itemdb->get_occurrences(X_i).size() < min_sup){continue;}//is_frequent?
+    vector<int> X_i_closure = itemdb->get_closure(X_i);
+    /*
+    cout << "<<<<<<<<<<<<<<<<<<<<<<<" << endl;
+    cout << "X_i : ";
+    print_vec(X_i);
+    cout << "X_i closure : ";
+    print_vec(X_i_closure);
+    */
+    if(is_same_vec(X_i,X_i_closure)){//is_closed?
+      LCM_Algorithm(new Itemset(X_i),min_sup,itemdb);
+    }
+  }
+}
+
+
+
+
+/*********外から呼ばれる***********/
+
+vector<CP*> Mine_Closed_Pattern(vector<vector<int>> itemsets,int min_sup){
+  
+  vector<CP*> result;
+  //todo
+  return result;
+}
+/*****
+@brief : 与えられたアイテムセットdbから頻出飽和なアイテムセットのリストを返す
+@param : itemsets アイテムセットDBを2次元vectorの形式で
+@param : min_sup
+@return : 頻出飽和なアイテムセットを2次元vectorの形式で返す．
+@detail
+各アイテムは0以上の整数値で表現されているとする．
+ ****/
+vector<vector<int>> Mine_Closed_Itemsets(vector<vector<int>> itemsets,int min_sup){
+  //lcm_init
+  vector<int> emp;
+  Itemset* item = new Itemset(emp);
+  vector<Itemset*> init;
+  FRCL_PATTERN = init;
+  ItemsetDB* idb = new ItemsetDB(itemsets);
+  
+  LCM_Algorithm(item,min_sup,idb);
+  vector<vector<int>> result;
+  for(int i = 0,n = FRCL_PATTERN.size();i<n;i++){
+    result.push_back(FRCL_PATTERN[i]->get_int_vec());
+  }
+  return result;
+}

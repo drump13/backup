@@ -1,20 +1,15 @@
 CXX = g++
 CC = gcc
-CFLAGS = -c 
+CFLAGS = -c -g
 CXXFLAGS = -c  -std=c++11
 
 CSOURCES = \
-	lcm53/lcm.c 
+	lcm.c 
 
 CXXSOURCES = \
-	tree.cpp \
-	file_io.cpp\
 	debug.cpp
-#	lcm_cpp/lcm.cpp
 
 OBJECT = \
-	tree.o\
-	file_io.o\
 	debug.o\
 	lcm.o
 

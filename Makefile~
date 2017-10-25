@@ -9,13 +9,16 @@ CSOURCES = \
 CXXSOURCES = \
 	tree.cpp \
 	file_io.cpp\
-	debug.cpp
+	debug.cpp\
+	measure.cpp\
+
 #	lcm_cpp/lcm.cpp
 
 OBJECT = \
 	tree.o\
 	file_io.o\
 	debug.o\
+	measure.o\
 	lcm.o
 
 BINARY = debug \

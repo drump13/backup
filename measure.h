@@ -14,7 +14,9 @@ void algorithm_stop();
 void algorithm_end();
 void LCM_start();
 void LCM_end();
+void set_num_of_root_candidate(int num);
 
 double get_LCM_time();
 double get_algorithm_time();
+int get_num_of_root_candidate();
 #endif //MEASURE_H

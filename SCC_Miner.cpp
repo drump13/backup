@@ -158,15 +158,12 @@ void exp_enum_tree_on_rprg(RPRGPathItem* rprg,EnumerationTree* tree){
 @param i_list LCMかけた結果
 @param p_list 
 @detail
-注意:rp-pathが1意でない(枝分かれする)ときがあるが，そのときは1意になるようにアイテムを削除
 */
 EnumerationTree* merge_item_result(vector<int> i_list, vector<RPRGPathItem*> p_list){
   vector<int> ref_list;
   ref_list.push_back(i_list[0]);
   for(int i = 1,n = i_list.size() ; i<n;i++){
-    if(is_there_sharing_occ(p_list[i_list[0]]->item_list,p_list[i_list[i]]->item_list)){
-      ref_list.push_back(i_list[i]);
-    }
+    ref_list.push_back(i_list[i]);
   }
   EnumerationTree* result = new EnumerationTree(0,p_list[ref_list[0]]->rp_path[0]);
   for(int i = 0 , n = ref_list.size();i<n;i++){
@@ -344,6 +341,12 @@ vector<RPRGPathItem*> exp_rg_path_rec(RPRGPathItem* rprg,vector<Tree*> oc_list,i
   //子供に同じサポートのものがあればtrueを入れる
   bool same_support_flag = false;
   for(auto itr = label_map.begin();itr != label_map.end();++itr){
+    //rp-pathを逆に辿らない
+    if(rprg->rp_path.size()>1 && rprg->rg_path.size() == 1){
+      if(rprg->rp_path[rprg->rp_path.size()-2] == itr->first){
+	continue;
+      }
+    }
     if(itr->second->item_list.size() == rprg->item_list.size()){same_support_flag = true;}
     RPRGPathItem* next_rprg = new RPRGPathItem(rprg);
     next_rprg->rg_path.push_back(itr->first);
@@ -600,13 +603,12 @@ vector<CP*> callingLCM(vector<vector<int>> in ,int min_sup,RGTree* rg_tree){
  //他LCMの呼び出し，ファイル入出力は時間に入れない  
   algorithm_stop();
   write_file_to_item_transactions(in);
-  //
   algorithm_restart();
   LCM_start();
   Mine_Closed_Itemsets(min_sup);
   algorithm_stop();
   LCM_end();
-  vector<CP*> r = read_CP_from_LCM_ver2_result(rg_tree);    
+  vector<CP*> r = read_CP_from_LCM_ver2_result(rg_tree);
   algorithm_restart();
   return r;
 }
@@ -618,14 +620,17 @@ vector<CP*> callingLCM(vector<vector<int>> in ,int min_sup,RGTree* rg_tree){
 vector<vector<int>> calling_LCM(vector<vector<int>> in,int min_sup){
  //他LCMの呼び出し，ファイル入出力は時間に入れない  
   algorithm_stop();
+  cout << "start file input to lcm" << endl;
   write_file_to_item_transactions(in);
-  //
+  cout << "end file input to lcm" << endl;
   algorithm_restart();
   LCM_start();
   Mine_Closed_Itemsets(min_sup);
   algorithm_stop();
   LCM_end();
+  cout << "start file output to lcm" << endl;
   vector<vector<int>> r = read_result_of_lcm();
+  cout << "end file output to lcm" << endl;
   algorithm_restart();
   return r;
 }
@@ -652,27 +657,17 @@ vector<EnumerationTree*> SCC_Miner(TreeDB* db,EnumerationTree* constrainedTree, 
   
   vector<EnumerationTree*> result;
   if(oc_list.size() < minimum_support){return result;}
-
-  //  RPTree* rp_tree = make_rp_tree(constrainedTree->get_node()->label,oc_list,minimum_support);
-
   //calc rp_tree
   RPTree* rp_tree = new RPTree(constrainedTree->get_node()->label,oc_list);
   exp_rp_tree(rp_tree,minimum_support);
   rp_tree->reindexing(0);
   vector<RPTree*> root_candidates = get_root_candidates(rp_tree,rp_tree,false);
-  cout << "after enumerating root candidates :" << root_candidates.size() << endl;
+  set_num_of_root_candidate(root_candidates.size());
   //generate rg_tree
   for(int i = 0,n = root_candidates.size() ; i < n ; i++){
     RGTree* rg_tree = new RGTree(root_candidates[i]);
     exp_rg_tree(rg_tree,minimum_support);
     rg_tree->reindexing(0);
-
-    /*    cout << "print rg tree " << i << "--------" <<  endl;
-    rg_tree->print_tree();
-    cout << "-----------------" << endl;
-    cout << "minimum_support is " << minimum_support << endl;
-    */
-
 
     //他作LCMの呼び出し
     vector<CP*> closed_patterns = callingLCM(rg_tree->get_item_transaction(),minimum_support,rg_tree);
@@ -714,21 +709,17 @@ vector<EnumerationTree*> SCC_Miner_Improved(TreeDB* db, EnumerationTree* constra
   vector<Tree*> oc_list = db->get_subtree_list(constrainedTree);
   vector<EnumerationTree*> result;
   if(oc_list.size() < minimum_support){return result;}
-  //  RPTree* rp_tree = make_rp_tree(constrainedTree->get_node()->label,oc_list,minimum_support);
   RPTree* rp_tree = new RPTree(constrainedTree->get_node()->label,oc_list);
   exp_rp_tree(rp_tree,minimum_support);
   rp_tree->reindexing(0);  
   rp_tree->print_tree();
-  cout << "before get_root" << endl;
   vector<RPTree*> root_candidates = get_root_candidates(rp_tree,rp_tree,true);
-  cout << "after get_root : " <<root_candidates.size()  << endl;
-
+  set_num_of_root_candidate(root_candidates.size());
   //generate rg_tree
   for(int i = 0,n = root_candidates.size() ; i < n ; i++){
     RGTree* rg_tree = new RGTree(root_candidates[i]);
     exp_rg_tree(rg_tree,minimum_support);
     rg_tree->reindexing(0);
-    cout << "rg_tree size is " <<rg_tree->get_num_of_nodes() << endl;
     
     //他作LCM
     vector<CP*> closed_patterns = callingLCM(rg_tree->get_item_transaction(),minimum_support,rg_tree);
@@ -778,20 +769,10 @@ vector<EnumerationTree*> SCC_Path_Miner(TreeDB* db,EnumerationTree* constrainedT
   rp_tree->reindexing(0);
 
   vector<int> dummy;
-  cout << "before path occl" << endl;
   vector<Path_OCCL*> p = rp_tree->get_POCCL_list(dummy); 
-  //cout<< p.size()<<endl;
-  //print_POCCL_list(p);
-  //cout << "before rprglist" << endl;
   vector<RPRGPathItem*> rprg_list = enum_rprg_item_list(p,minimum_support,true);
-  //cout << "----------- rprg path item list ------------" << endl;
-  
-  //cout << "---------------------------------------------" << endl;
-  //  cout <<"rprg_list size is "<< rprg_list.size() << endl;
-  //  cout << "before convert rprg list" << endl; 
-  vector<vector<int>> r = convert_rprg_list(rprg_list);
-  //  cout << "after convert" << endl;
 
+  vector<vector<int>> r = convert_rprg_list(rprg_list);
   r = calling_LCM(r,minimum_support);
  
 

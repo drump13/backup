@@ -10,7 +10,7 @@ CXXSOURCES = \
 	tree.cpp \
 	file_io.cpp\
 	debug.cpp\
-	measure.cpp\
+	measure.cpp
 
 #	lcm_cpp/lcm.cpp
 

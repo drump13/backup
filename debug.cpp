@@ -7,6 +7,24 @@
 #include "SCC_Miner.cpp"
 
 static int MIN_SUP = 2;
+vector<double> time_list, lcm_time_list;
+vector<int> memorys;
+
+void set_init(){
+  init_time();
+  set_initial_memory();
+}
+void record(double g_time,double lcm_time,int memory){
+  time_list.push_back(g_time);
+  lcm_time_list.push_back(lcm_time);
+  memorys.push_back(memory);
+}
+
+void print_record(){
+  cout << "SCC_Miner : " << time_list[0] << "  lcm time " << lcm_time_list[0] << "  memory size: " <<memorys[0]<< endl;
+  cout << "SCC_Miner_Improved : " << time_list[1] << "  lcm time " << lcm_time_list[1] <<  "  memory size: " <<memorys[1]<< endl;
+  cout << "SCC_Path_Miner : " << time_list[2] << "  lcm time " << lcm_time_list[2] << "  memory size:" << memorys[2]<< endl;
+}
 
 int main(){
   // vector<string> sv = split("0 3 3 -1 3 -1 -1 4",' ');
@@ -25,47 +43,47 @@ int main(){
   db->print_tree_db();
   Tree* subtree = make_tree("1 5 -1 -1");
   vector<Tree*> trees = db->get_subtree_list(subtree);
-  vector<double> time_list, lcm_time_list;
-  vector<int> root_c_list;
   EnumerationTree* et = gen_enumeration_tree(subtree,NULL,trees); 
 
-  cout << "SCC_Miner start !!!!!" << endl;
-  init_time();
-  algorithm_start();
   vector<EnumerationTree*> result = SCC_Miner(db,et,MIN_SUP);
+
+  vector<int> root_c_list;
+
+
+  cout << "SCC_Miner start !!!!!" << endl;
+  set_init();
+  algorithm_start();
+  result = SCC_Miner(db,et,MIN_SUP);
   algorithm_end();
-  time_list.push_back(get_algorithm_time());
-  lcm_time_list.push_back(get_LCM_time());
-  root_c_list.push_back(get_num_of_root_candidate());
-  cout << "closed tree size is" << result.size() << endl; 
+  vector<EnumerationTree*>().swap(result);
+  record(get_algorithm_time(),get_LCM_time(),get_memory_usage());
+  //cout << "closed tree size is" << result.size() << endl; 
   
 
   cout << "SCC_Miner_Improved start!!!!" << endl;
-  init_time();
+  set_init();
   algorithm_start();
   result = SCC_Miner_Improved(db,et,MIN_SUP);
   algorithm_end();
-  time_list.push_back(get_algorithm_time());
-  lcm_time_list.push_back(get_LCM_time());
-  root_c_list.push_back(get_num_of_root_candidate());
-  cout << "closed tree size is" << result.size() << endl; 
+  vector<EnumerationTree*>().swap(result);
+  record(get_algorithm_time(),get_LCM_time(),get_memory_usage());
+  //  cout << "closed tree size is" << result.size() << endl; 
  
 
-  init_time();
+  set_init();
   algorithm_start();
   result = SCC_Path_Miner(db,et,MIN_SUP);
   algorithm_end();
-  time_list.push_back(get_algorithm_time());
-  lcm_time_list.push_back(get_LCM_time());
-  cout << "closed tree size is " << result.size() << endl;
+  record(get_algorithm_time(),get_LCM_time(),get_memory_usage());
+
+  // cout << "closed tree size is " << result.size() << endl;
   for(int i = 0 , n = result.size() ; i<n; i++){
     cout << result[i]->get_tree_string() << endl;
     cout << " ------- " << endl;
   }
 
-  cout << "SCC_Miner : " << time_list[0] << "  lcm time " << lcm_time_list[0] << "  root candidate size: "<<root_c_list[0] << endl;
-  cout << "SCC_Miner_Improved : " << time_list[1] << "  lcm time " << lcm_time_list[1] <<  "  root candidate size: "<< root_c_list[1] << endl;
-  cout << "SCC_Path_Miner : " << time_list[2] << "  lcm time " << lcm_time_list[2] <<  endl;
+
+  print_record();
 
   //  cout << " --";
   //result[6]->print_tree();

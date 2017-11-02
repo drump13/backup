@@ -683,10 +683,11 @@ vector<EnumerationTree*> SCC_Miner(TreeDB* db,EnumerationTree* constrainedTree, 
 	result.push_back(get_closed_tree(rg_tree,closed_patterns[j]));
       }
     }
+    set_current_memory();
     delete rg_tree;
 
   }
-
+  delete rp_tree;
   return result;
 }
 
@@ -735,10 +736,11 @@ vector<EnumerationTree*> SCC_Miner_Improved(TreeDB* db, EnumerationTree* constra
 	result.push_back(get_closed_tree(rg_tree,closed_patterns[j]));
       }
     }
+    set_current_memory();
     delete rg_tree;
   }
-
-  
+  delete rp_tree;
+  return result;
 
 }
 
@@ -782,6 +784,7 @@ vector<EnumerationTree*> SCC_Path_Miner(TreeDB* db,EnumerationTree* constrainedT
   for(int i = 0,n = r.size();i<n;i++){
     result.push_back(merge_item_result(r[i],rprg_list));
   }
+  set_current_memory();
   cout << "after_merge "<<endl;
   return result;
 }

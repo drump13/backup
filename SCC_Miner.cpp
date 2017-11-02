@@ -512,7 +512,12 @@ void rp_tree_cutter(RPTree* rptree,RPTree* rproot){
     rptree->rm_dec();
     return;
   }
-  for(int i = 0,n = rptree->get_children().size();i<n;i++){
+  for(int i = 0, n = rptree->get_children().size();i<n;i++){
+    int k = rptree->get_children().size();
+    if(k < n){
+      i--;
+      n = rptree->get_children().size();
+    }
     rp_tree_cutter((RPTree*)rptree->get_children()[i],rproot);
   }
 }
@@ -767,16 +772,17 @@ vector<EnumerationTree*> SCC_Path_Miner(TreeDB* db,EnumerationTree* constrainedT
   exp_rp_tree(rp_tree,minimum_support);
   rp_tree->reindexing(0);
 
+
   rp_tree_cutter(rp_tree,rp_tree);
   rp_tree->reindexing(0);
 
   vector<int> dummy;
-  vector<Path_OCCL*> p = rp_tree->get_POCCL_list(dummy); 
+  vector<Path_OCCL*> p = rp_tree->get_POCCL_list(dummy);
   vector<RPRGPathItem*> rprg_list = enum_rprg_item_list(p,minimum_support,true);
+
 
   vector<vector<int>> r = convert_rprg_list(rprg_list);
   r = calling_LCM(r,minimum_support);
- 
 
   //自作LCM
   //r = Mine_Closed_Itemsets(r,minimum_support);
@@ -785,7 +791,6 @@ vector<EnumerationTree*> SCC_Path_Miner(TreeDB* db,EnumerationTree* constrainedT
     result.push_back(merge_item_result(r[i],rprg_list));
   }
   set_current_memory();
-  cout << "after_merge "<<endl;
   return result;
 }
 

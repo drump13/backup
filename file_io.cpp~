@@ -7,9 +7,12 @@
 occurrenceのvectorにするためにまずは2次元配列の行と列を入れ替える操作を行う
 */
 void write_file_to_item_transactions(vector<vector<int>> tr){
+
   vector<vector<int>> transactions = convert(tr);
+  //  print_vv(transactions);
+  //cout << "after convert" << endl;
   ofstream output_file(EXCHANGE_OUT_FILE);
-  cout << "before write " << endl;
+  //cout << "before write " << endl;
   for(int i = 0,n=transactions.size(); i<n;i++){
     for(int j =0,m=transactions[i].size();j<m;j++){
       output_file << transactions[i][j]+1 << " ";
@@ -37,17 +40,12 @@ vector<vector<int>> read_result_of_lcm(){
     cerr << "file input is failed" << endl;
   }
   string s;
-  int i = 0;
   while(getline(ifs,s)){
-    ++i;
-    if(i%2 != 1){
-      continue;
-    }
     vector<string> sv = split(s,' ');
     if(sv.size() == 0){continue;}
     vector<int> current;
-    for(int j = 1 ,m = sv.size();j<m;j++){
-      current.push_back(stoi(sv[j]));
+    for(int j = 0 ,m = sv.size();j<m;j++){
+      current.push_back(stoi(sv[j])-1);
     }
     sort(current.begin(),current.end());
     result.push_back(current);
@@ -194,19 +192,22 @@ string to_csstr(vector<string> sv){
 }
 
 /*
-@brief 中のベクターのmax sizeを返す
+@brief 中のベクターのmax itemを返す
  */
 int get_max_size(vector<vector<int>> transaction){
     int max=0;
     for(int i = 0 , n = transaction.size();i<n;i++){
-      int current_size = transaction[i].size();
-      if(max < current_size){max = current_size;}
+      //for(int j = 0,m = transaction[i].size();j<m;j++){
+	int current_size = transaction[i].size();
+	if(max < current_size){max = current_size;}
+	//if(max < transaction[i][j]){max = transaction[i][j];}
+	// }
     }
     return max;
 }
 
 /*
-  @brief 2次元配列の行と列を入れ替える
+  @brief item{occurrences} -> occurrence{items}にする
  */
 vector<vector<int>> convert(vector<vector<int>> transaction){
   int max = get_max_size(transaction);  
@@ -217,6 +218,7 @@ vector<vector<int>> convert(vector<vector<int>> transaction){
   }
   for(int i = 0 , n=transaction.size();i<n;i++){
     for(int j =0, m = transaction[i].size();j<m;j++){
+      //      cout <<i<<" " << j << " " << n << " " << m <<  " " <<transaction[i][j]<<endl;
       result[transaction[i][j]].push_back(i);
     }
   }
@@ -241,8 +243,11 @@ TreeDB* get_treedb_from_file(string filename){
 
   TreeDB* result = new TreeDB();
   for(int i = 0, n = tree_strings.size();i < n;i++){
-    result->add_tree(make_tree(tree_strings[i]));    
+    Tree* t=make_tree(tree_strings[i]);
+    t->reindexing(0);
+    result->add_tree(t);    
   }
+  result->set_tree_id();
 
   return result;
   

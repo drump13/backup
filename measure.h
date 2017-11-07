@@ -18,6 +18,7 @@ void LCM_end();
 void set_num_of_root_candidate(int num);
 void set_initial_memory();
 void set_current_memory();
+void reset_current_memory();
 
 int get_memory_usage();
 double get_LCM_time();

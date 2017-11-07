@@ -602,9 +602,9 @@ vector<CP*> get_cp_list_corresponding_to_ids(RGTree* rg_tree,vector<vector<int>>
 
 /*
 @brief C言語で書かれたLCMの呼び出し
-@sa SCC_Miner SCC_Miner_Improved
+@sa SCC_Path_Miner
  */
-vector<CP*> callingLCM(vector<vector<int>> in ,int min_sup,RGTree* rg_tree){
+vector<vector<int>> calling_LCM(vector<vector<int>> in,int min_sup){
  //他LCMの呼び出し，ファイル入出力は時間に入れない  
   algorithm_stop();
   write_file_to_item_transactions(in);
@@ -613,31 +613,32 @@ vector<CP*> callingLCM(vector<vector<int>> in ,int min_sup,RGTree* rg_tree){
   Mine_Closed_Itemsets(min_sup);
   algorithm_stop();
   LCM_end();
-  vector<CP*> r = read_CP_from_LCM_ver2_result(rg_tree);
+  vector<vector<int>> r = read_result_of_lcm();
   algorithm_restart();
   return r;
 }
 
 /*
 @brief C言語で書かれたLCMの呼び出し
-@sa SCC_Path_Miner
+@sa SCC_Miner SCC_Miner_Improved
  */
-vector<vector<int>> calling_LCM(vector<vector<int>> in,int min_sup){
+vector<CP*> callingLCM(vector<vector<int>> in ,int min_sup,RGTree* rg_tree){
  //他LCMの呼び出し，ファイル入出力は時間に入れない  
-  algorithm_stop();
-  cout << "start file input to lcm" << endl;
+  /*  algorithm_stop();
   write_file_to_item_transactions(in);
-  cout << "end file input to lcm" << endl;
   algorithm_restart();
   LCM_start();
   Mine_Closed_Itemsets(min_sup);
   algorithm_stop();
   LCM_end();
-  cout << "start file output to lcm" << endl;
-  vector<vector<int>> r = read_result_of_lcm();
-  cout << "end file output to lcm" << endl;
+  vector<vector<int>> r = read_from_LCM_ver2_result();
+  algorithm_restart();*/
+  vector<vector<int>> r = calling_LCM(in,min_sup);
+  algorithm_stop();
+  //アイテムセットのOccurrenceを取る，本来ならLCMの中でやるがOccurrenceListの取り方が分からない
+  vector<CP*> cp = convert_to_CP(r,rg_tree);
   algorithm_restart();
-  return r;
+  return cp;
 }
 
 
@@ -675,7 +676,7 @@ vector<EnumerationTree*> SCC_Miner(TreeDB* db,EnumerationTree* constrainedTree, 
     rg_tree->reindexing(0);
 
     //他作LCMの呼び出し
-    vector<CP*> closed_patterns = callingLCM(rg_tree->get_item_transaction(),minimum_support,rg_tree);
+    vector<CP*> closed_patterns = callingLCM(convert(rg_tree->get_item_transaction()),minimum_support,rg_tree);
   
     //自作LCM呼び出し
     /*    vector<vector<int>> vv =  convert(rg_tree->get_item_transaction());
@@ -692,6 +693,7 @@ vector<EnumerationTree*> SCC_Miner(TreeDB* db,EnumerationTree* constrainedTree, 
     delete rg_tree;
 
   }
+
   delete rp_tree;
   return result;
 }
@@ -718,7 +720,7 @@ vector<EnumerationTree*> SCC_Miner_Improved(TreeDB* db, EnumerationTree* constra
   RPTree* rp_tree = new RPTree(constrainedTree->get_node()->label,oc_list);
   exp_rp_tree(rp_tree,minimum_support);
   rp_tree->reindexing(0);  
-  rp_tree->print_tree();
+  //  rp_tree->print_tree();
   vector<RPTree*> root_candidates = get_root_candidates(rp_tree,rp_tree,true);
   set_num_of_root_candidate(root_candidates.size());
   //generate rg_tree
@@ -728,11 +730,11 @@ vector<EnumerationTree*> SCC_Miner_Improved(TreeDB* db, EnumerationTree* constra
     rg_tree->reindexing(0);
     
     //他作LCM
-    vector<CP*> closed_patterns = callingLCM(rg_tree->get_item_transaction(),minimum_support,rg_tree);
+    vector<CP*> closed_patterns = callingLCM(convert(rg_tree->get_item_transaction()),minimum_support,rg_tree);
 
 
     //自作
-    /*    vector<vector<int>> vv =  rg_tree->get_item_transaction();
+    /*    vector<vector<int>> vv =  convert(rg_tree->get_item_transaction());
     vector<vector<int>> id_lists = Mine_Closed_Itemsets(convert(vv),minimum_support);
     vector<CP*> closed_patterns = get_cp_list_corresponding_to_ids(rg_tree,id_lists);*/
 
@@ -782,7 +784,7 @@ vector<EnumerationTree*> SCC_Path_Miner(TreeDB* db,EnumerationTree* constrainedT
 
 
   vector<vector<int>> r = convert_rprg_list(rprg_list);
-  r = calling_LCM(r,minimum_support);
+  r = calling_LCM(convert(r),minimum_support);
 
   //自作LCM
   //r = Mine_Closed_Itemsets(r,minimum_support);

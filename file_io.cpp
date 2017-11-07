@@ -6,9 +6,9 @@
 @detail
 occurrenceのvectorにするためにまずは2次元配列の行と列を入れ替える操作を行う
 */
-void write_file_to_item_transactions(vector<vector<int>> tr){
+void write_file_to_item_transactions(vector<vector<int>> transactions){
 
-  vector<vector<int>> transactions = convert(tr);
+  //  vector<vector<int>> transactions = convert(tr);
   //  print_vv(transactions);
   //cout << "after convert" << endl;
   ofstream output_file(EXCHANGE_OUT_FILE);
@@ -62,7 +62,7 @@ vector<vector<int>> read_result_of_lcm(){
 ver2はアイテムセットのoccurrenceを返さないため，rgtreeにフィルターをかけることでoccurrence
 を取得する．
 */
-vector<CP*> read_CP_from_LCM_ver2_result(RGTree* rgtree){
+vector<vector<int>> read_from_LCM_ver2_result(){
   ifstream ifs(EXCHANGE_IN_FILE);
   if(ifs.fail()){
     cerr << "file input is failed" << endl;
@@ -78,14 +78,18 @@ vector<CP*> read_CP_from_LCM_ver2_result(RGTree* rgtree){
     sort(current.begin(),current.end());
     id_lists.push_back(current);
   }
+  return id_lists;
+}
+
+vector<CP*> convert_to_CP(vector<vector<int>> id_lists,RGTree* rgtree){
   vector<CP*> result;
   for(int i = 0 , n = id_lists.size();i<n;i++){
     vector<int> occ = rgtree->filter_rgtree_occurrence(id_lists[i],rgtree->item_list);
     result.push_back(new CP(id_lists[i],occ));
   }
+    
   return result;
 }
-
 
 
 /*

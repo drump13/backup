@@ -23,7 +23,8 @@ Tree::Tree(Tree* root){
 }
 
  /*
- 標準形文字列を渡すとその木を生成する
+   @brief 標準形文字列を渡すとその木を生成する
+   @param canonical_form
  */
 Tree::Tree(string canonical_form){
   cout << "here is Tree(string) 1" << endl;
@@ -33,6 +34,17 @@ Tree::Tree(string canonical_form){
   add_child(new Tree(0,sv,NULL));
   cout << "here is Tree(string) 2" << endl;
   reindexing(0);
+}
+
+/*
+  @brief XMLのタグ列を渡すとその木を生成する．
+  @param tag_vec タグのベクター
+  @param exception_root 根
+  @detail
+  xmlが1本の巨大な木になっている場合はexception_rootを考えずに森と考えることがある．
+ */
+Tree::Tree(vector<string> tag_vec,string exception_root){
+  //todo
 }
 
 Tree::Tree(int current_index,vector<string> sv,Tree *parent){
@@ -150,9 +162,44 @@ void Tree::to_attribute_tree_by_cutting(){
     new_children.push_back(itr->second);
   }
   children = new_children;
+  for(Tree* c :children){
+    c->to_attribute_tree_by_cutting();
+  }
 }
 
+/*
+@brief 任意の無順序木をattribute treeに変換
+@detail
+同じラベルを持つ子ノードは，その孫ノードを1つにまとめることによってattribute treeとする．
+ */
+void Tree::to_attribute_tree_by_merging(){
+  //todo
+  map<int,vector<Tree*>> label_map;
+  for(int i = 0 , n = children.size();i<n;i++){
+    label_map[children[i]->get_node()->label].push_back(children[i]);
+  }
+  vector<Tree*> new_children;
+  for(auto itr = label_map.begin(); itr != label_map.end();++itr){
+    if(itr->second.size() > 1){
+      Tree* t = new Tree(get_node()->id,get_node()->label);
+      t->set_parent(parent);
+      for(int i = 0 , n  = itr->second.size();i<n;i++){
+	for(int j = 0, m = itr->second[i]->get_children().size();j<m;j++){
+	  t->add_child(itr->second[i]->get_children()[j]);
+	}
+      }
+      new_children.push_back(t);
+    }else{
+      new_children.push_back(itr->second[0]);
+    }
+  }
+  children = new_children;
+  for(Tree* c :children){
+    c->to_attribute_tree_by_merging();
+  }
 
+}
+  
 void Tree::print_tree(){
   //string result = "";
   //  result = get_string();
@@ -585,6 +632,18 @@ void TreeDB::to_attribute_tree_by_cutting(){
 }
 
 /*
+@brief TreeDB中の木全てをattributeTreeに変換
+@sa Tree::to_attriute_tree_by_merging
+*/
+ void TreeDB::to_attribute_tree_by_merging(){
+   for(int i = 0 ,n = treedb.size();i<n;i++){
+     treedb[i]->to_attribute_tree_by_merging();
+   }
+   
+ }
+
+
+/*
 @brief TreeDB中のノードの数を返す
 @sa Tree::get_num_of_nodes
  */
@@ -625,12 +684,195 @@ void TreeDB::print_tree_db(){
   }
 }
 
+/***************** RPTreee ******************/
+
+RPTree::RPTree(int label,vector<Tree*> occ_list):EnumerationTree(0,label,occ_list){
+  for(int i = 0 , n = occ_list.size();i<n;i++){
+    item_list.push_back(i);
+  }
+}
+
+RPTree::RPTree(int label,vector<Tree*> occ_list,vector<int> item_list):EnumerationTree(0,label,occ_list){
+  for(int i = 0,n=item_list.size();i<n;i++){
+    this->item_list.push_back(item_list[i]);
+  }
+}
+
+/*
+  @brief このノード以下の木を削除
+  @return
+   */
+void RPTree::rm_dec(){
+  ((RPTree*)parent)->remove_child(get_node()->label);
+  parent = NULL;
+}
+
+/*
+  @brief 以下のノードのパスとOccurrence_listのペアのリストを返す
+  @param label_path　外から渡されるときは空のベクターを引数に取る
+  @detail
+*/
+vector<Path_OCCL*> RPTree::get_POCCL_list(vector<int> label_path){
+   vector<Path_OCCL*> result;
+    vector<int> s;
+    if(label_path.size() == 0){
+      s.push_back(get_node()->label);
+      Path_OCCL* poc = new Path_OCCL(s,get_occurrence_list(),item_list);
+      result.push_back(poc);
+    }else{
+      Path_OCCL* poc = new Path_OCCL(label_path,get_occurrence_list(),item_list);
+      poc->rp_path.push_back(get_node()->label);
+      s = poc->rp_path;
+      result.push_back(poc);
+    }
+    
+    for(int i = 0 , n = get_children().size();i<n;i++){
+      vector<Path_OCCL*> res = ((RPTree*) get_children()[i])->get_POCCL_list(s);
+      result.insert(result.end(),res.begin(),res.end());
+    }
+    
+    return result;
+ 
+
+}
+
+//debug
+void RPTree::print_tree(){
+  cout << node->id << ":" << node->label << " " << get_occurrence_list().size() << endl;
+  print_occurrence_list();
+  for(int i = 0,n=children.size();i<n;i++){
+    children[i]->print_tree();
+  }
+  cout << -1 << " " << endl;
+}
+
+
+/**********RGTree **********/
+RGTree::RGTree(RPTree* rp_tree):EnumerationTree(0,rp_tree->get_node()->label,rp_tree->get_occurrence_list()){
+  for(int i=0,n=rp_tree->get_occurrence_list().size();i<n;i++){
+    item_list.push_back(i);
+  }
+}
+
+RGTree::RGTree(int label, vector<Tree*> occ_list,vector<int> item_list):EnumerationTree(0,label,occ_list){
+  this->item_list = item_list;
+}
+//debug
+void RGTree::print_item_list(){
+  cout <<"size:" << item_list.size()<< " {" ;
+  for(int i = 0,n = item_list.size();i <n;i++){
+    cout << item_list[i]<< " ";
+  }
+  cout << "}"<<endl;
+}
+//debug
+void RGTree::print_tree(){
+  cout << node->id << ":" << node->label << " " << get_occurrence_list().size() << endl;
+  print_occurrence_list();
+  print_item_list();
+  for(int i = 0,n=children.size();i<n;i++){
+    children[i]->print_tree();
+  }
+  cout << -1 << " " << endl;
+}
+
+/*
+  @brief 子孫のitem_listをvectorにまとめて返す
+*/
+vector<vector<int>> RGTree::get_item_transaction(){
+  vector<vector<int>> transaction;
+  transaction.push_back(item_list);
+  for(int i = 0,n = get_children().size() ; i < n;i++){
+    vector<vector<int>> res = ((RGTree*)get_children()[i])->get_item_transaction();
+    transaction.insert(transaction.end(),res.begin(),res.end());
+  }
+  return transaction;
+}
+
+/*
+  @brief idリストにあるノードのoccurrenceのandをとって返す
+  @param id_list
+  @param oc_list
+  @detail
+  今見ているノードのoccurrenceとはここではitem_listを指す
+*/
+vector<int> RGTree::filter_rgtree_occurrence(vector<int> id_list,vector<int> oc_list){
+  if(find(id_list.begin(),id_list.end(),node->id) == id_list.end()){
+    return oc_list;
+  }
+  vector<int> result;
+  set_intersection(item_list.begin(),item_list.end(),oc_list.begin(),oc_list.end(),back_inserter(result));
+  for(int i=0, n = get_children().size();i<n;i++){
+    vector<int> c = ((RGTree*) get_children()[i])->filter_rgtree_occurrence(id_list,result);
+    vector<int> res;
+    set_intersection(result.begin(),result.end(),c.begin(),c.end(),back_inserter(res));
+    result = res;
+  }
+  return result;
+}
+
+/*
+  @brief idリストにあるノードのoccurrenceのandをとって返す
+  @param id_list : 解に含まれるRGTree中のノードidのリスト
+  @param oc_list
+  @detail
+  今見ているノードのoccurrenceとはここではitem_listを指す
+ */
+vector<int> RGTree::filter_rgtree_occurrence_improved(vector<int> id_list){
+  vector<RGTree*> all_leaves = get_all_leaves(id_list);
+  //  cout << "all_leaves size is " << all_leaves.size() << endl;
+  vector<int> result=all_leaves[0]->item_list;
+  for(int i =1,n=all_leaves.size();i<n;i++){
+    vector<int> occ = all_leaves[i]->item_list;
+    vector<int> res;
+    set_intersection(result.begin(),result.end(),occ.begin(),occ.end(),back_inserter(res));
+    result = res;
+  }
+  return result;
+}
+
+/*
+  @brief 今見ているid_listの葉ノードをすべて取ってくる
+ @param id_list
+ */
+vector<RGTree*> RGTree::get_all_leaves(vector<int> id_list){
+  vector<RGTree*> res;
+  if(!is_child_id_included(children,id_list)){
+    res.push_back(this);
+    return res;
+  }
+  vector<RGTree*> cur_children;
+  for(Tree* c : children){cur_children.push_back((RGTree*) c);}
+ 
+  for(RGTree* chd : cur_children){
+    if(find(id_list.begin(),id_list.end(),chd->get_node()->id) == id_list.end()){
+      continue;
+    }
+    vector<RGTree*> c = chd->get_all_leaves(id_list);
+    res.insert(res.end(),c.begin(),c.end());
+  }
+  return res;
+} 
 
 
 /***************************************
 以下静的お便利メソッドの実装
 ****************************************/
-
+/*
+@brief 木のリストに，idlistに含まれるidを持つものが存在するかどうか
+@param children: tree list
+@param id_list
+@sa get_all_leaves
+@return 含まれていればtrueを返す
+ */
+bool is_child_id_included(vector<Tree*> children,vector<int> id_list){
+  for(Tree* c :children){
+    if(find(id_list.begin(),id_list.end(),c->get_node()->id) !=id_list.end()){
+      return true;
+    }
+  }
+  return false;
+}
 
 vector<string> split(const string &s, char delim) {
   vector<string> elems;
@@ -707,6 +949,7 @@ vector<int> get_correspond_index_list(vector<Tree*> current,vector<Tree*> root_o
   return result;
 }
 
+//@debug
 void print_tree_vector(vector<Tree*> tree_vec){
   for(int i = 0,n = tree_vec.size();i<n;i++){
     if(tree_vec[i] == NULL){
@@ -719,6 +962,7 @@ void print_tree_vector(vector<Tree*> tree_vec){
   }
 }
 
+//@debug
 void print_vv(vector<vector<int>>vv){
     for(int i = 0 , n = vv.size();i<n;i++){
       cout << "{"; 

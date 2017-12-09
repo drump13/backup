@@ -7,12 +7,7 @@
 occurrenceのvectorにするためにまずは2次元配列の行と列を入れ替える操作を行う
 */
 void write_file_to_item_transactions(vector<vector<int>> transactions){
-
-  //  vector<vector<int>> transactions = convert(tr);
-  //  print_vv(transactions);
-  //cout << "after convert" << endl;
   ofstream output_file(EXCHANGE_OUT_FILE);
-  //cout << "before write " << endl;
   for(int i = 0,n=transactions.size(); i<n;i++){
     for(int j =0,m=transactions[i].size();j<m;j++){
       output_file << transactions[i][j]+1 << " ";
@@ -21,6 +16,39 @@ void write_file_to_item_transactions(vector<vector<int>> transactions){
   }
   output_file.close();
 }
+
+/*
+@brief 実験結果を指定したファイルに書き込み
+@param filename
+@param minsup_list :minimum support list
+@param timelist : result list of time
+ */
+void write_expriment_time_result(string filename,vector<int> minsup_list,vector<double> time_list){
+  //todo
+  ofstream output_file(filename);
+  for(int i = 0 , n = minsup_list.size();i<n;i++){
+    string s = to_string(minsup_list[i]) + " " + to_string(time_list[i]) + "\n";
+    output_file << s;
+  }
+  output_file.close();
+}
+
+/*
+@brief 実験結果(memory)を指定したファイルに書き込み
+@param filename
+@param minsup_list :minimum support list
+@param memory_list : result list of memory usage
+ */
+void write_expriment_time_result(string filename,vector<int> minsup_list,vector<int> memory_list){
+  //todo
+  ofstream output_file(filename);
+  for(int i = 0 , n = minsup_list.size();i<n;i++){
+    string s = to_string(minsup_list[i]) + " " + to_string(memory_list[i]) + "\n";
+    output_file << s;
+  }
+  output_file.close();
+}
+
 
 vector<string> read_tree_db(){
   vector<string> result;
@@ -84,7 +112,10 @@ vector<vector<int>> read_from_LCM_ver2_result(){
 vector<CP*> convert_to_CP(vector<vector<int>> id_lists,RGTree* rgtree){
   vector<CP*> result;
   for(int i = 0 , n = id_lists.size();i<n;i++){
-    vector<int> occ = rgtree->filter_rgtree_occurrence(id_lists[i],rgtree->item_list);
+    //vector<int> occ = rgtree->filter_rgtree_occurrence(id_lists[i],rgtree->item_list);
+    vector<int> occ = rgtree->filter_rgtree_occurrence_improved(id_lists[i]);
+
+    //cout << "convert_to_CP  " << i <<" / " << n <<"   occ size is "<<occ.size()<< endl;
     result.push_back(new CP(id_lists[i],occ));
   }
     
@@ -182,6 +213,21 @@ vector<string> read_cslogs(){
   while(getline(input_file,s)){
     vector<string> sv = split(s,' ');
     result.push_back(to_csstr(sv));
+  }
+  return result;
+}
+
+/*
+@brief 木のstring表現がされたファイルを読み木のDBを返す
+@param filename
+ */
+vector<string> read_tree_file(string filename){
+  ifstream input_file(filename);
+  if(input_file.fail()){cerr << "file input is failed" << endl;}
+  string s;
+  vector<string> result ;
+  while(getline(input_file,s)){
+    result.push_back(s);
   }
   return result;
 }

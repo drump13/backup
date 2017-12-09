@@ -20,7 +20,7 @@ void set_initial_memory();
 void set_current_memory();
 void reset_current_memory();
 
-int get_memory_usage();
+unsigned long get_memory_usage();
 double get_LCM_time();
 double get_algorithm_time();
 int get_num_of_root_candidate();

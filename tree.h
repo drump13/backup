@@ -19,15 +19,19 @@ struct Pair{
   int left;
   int right;
 };
+
+
 /*
 Treeクラス
+最も基本的な木のクラス，DB中の木は全てこの型
+また，アルゴリズム中に登場する木もすべてこの型を継承するものとする．
 */
-
 class Tree{
 public:
   Tree(int id,int label);
   Tree(Tree* root);
   Tree(string canical_form);
+  Tree(vector<string> tag_vec,string exception_root);
   Tree(int current_index,vector<string> sv,Tree* parent);
   //  Tree* make_tree(string canonical_form);
   Node* new_node(int lab);
@@ -49,6 +53,7 @@ public:
   Tree* get_child(int label);
   void update_tree_id(int id);
   void to_attribute_tree_by_cutting();
+  void to_attribute_tree_by_merging();
   int get_tree_id();
   vector<Tree*> enumerate_subtree(Tree* subtree);
   Tree* get_root();
@@ -80,6 +85,7 @@ public:
 	bool is_frequent(Tree* tree,int minimum_sup);
 	vector<Tree*> get_subtree_list(Tree* tree);
 	void to_attribute_tree_by_cutting();
+	void to_attribute_tree_by_merging();
 	
 	int get_num_of_nodes();
 	int get_num_of_trees();
@@ -107,8 +113,12 @@ private:
 	RGNode *root;
 };
 */
+
+
 /*
-tree-expansion-strategyアルゴリズムに用いられる
+EnumerationTreeクラス
+tree-expansion-strategyアルゴリズムに用いられる木を定義したクラス．
+より複雑なstrategyを用いる場合は適宜このクラスを継承する．
 */
 class EnumerationTree : public Tree{
 public:
@@ -196,138 +206,36 @@ struct Path_OCCL{
 class RPTree : public EnumerationTree{
 public:
   vector<int> item_list;
-  RPTree(int label,vector<Tree*> occ_list):EnumerationTree(0,label,occ_list){
-    for(int i = 0 , n = occ_list.size();i<n;i++){
-      item_list.push_back(i);
-    }
-  }
-  RPTree(int label,vector<Tree*> occ_list,vector<int> item_list):EnumerationTree(0,label,occ_list){
-    for(int i = 0,n=item_list.size();i<n;i++){
-      this->item_list.push_back(item_list[i]);
-    }
-  }
-
+  RPTree(int label,vector<Tree*> occ_list);
+  RPTree(int label, vector<Tree*> occ_list,vector<int> item_list);
   virtual ~RPTree(){};
-  /*
-    @brief このノード以下の木を削除
-    @return
-   */
-  void rm_dec(){
-    ((RPTree*)parent)->remove_child(get_node()->label);
-    parent = NULL;
-  };
-  
-  /*
-    @brief 以下のノードのパスとOccurrence_listのペアのリストを返す
-    @param label_path　外から渡されるときは空のベクターを引数に取る
-    @detail
-  */
-  vector<Path_OCCL*> get_POCCL_list(vector<int> label_path){
-    vector<Path_OCCL*> result;
-    vector<int> s;
-    if(label_path.size() == 0){
-      s.push_back(get_node()->label);
-      Path_OCCL* poc = new Path_OCCL(s,get_occurrence_list(),item_list);
-      result.push_back(poc);
-    }else{
-      Path_OCCL* poc = new Path_OCCL(label_path,get_occurrence_list(),item_list);
-      poc->rp_path.push_back(get_node()->label);
-      s = poc->rp_path;
-      result.push_back(poc);
-    }
-    
-    for(int i = 0 , n = get_children().size();i<n;i++){
-      vector<Path_OCCL*> res = ((RPTree*) get_children()[i])->get_POCCL_list(s);
-      result.insert(result.end(),res.begin(),res.end());
-    }
-    
-    return result;
-    
-  }
-
+  void rm_dec();
+  vector<Path_OCCL*> get_POCCL_list(vector<int> label_path);
 
   //debug
-  void print_tree()override{
-    cout << node->id << ":" << node->label << " " << get_occurrence_list().size() << endl;
-    print_occurrence_list();
-    for(int i = 0,n=children.size();i<n;i++){
-      children[i]->print_tree();
-    }
-    cout << -1 << " " << endl;
-  }
+  void print_tree()override;
 };
 
 
 
 class RGTree : public EnumerationTree{
 public:
- RGTree(RPTree* rp_tree):EnumerationTree(0,rp_tree->get_node()->label,rp_tree->get_occurrence_list()){
-    for(int i=0,n=rp_tree->get_occurrence_list().size();i<n;i++){
-      item_list.push_back(i);
-    }
-  }
- RGTree(int label, vector<Tree*> occ_list,vector<int> item_list):EnumerationTree(0,label,occ_list){
-    this->item_list = item_list;
-  }
+  RGTree(RPTree* rp_tree);
+  RGTree(int label,vector<Tree*> occ_list,vector<int> item_list);
   vector<int> item_list;
   //debug
-  void print_item_list(){
-    cout <<"size:" << item_list.size()<< " {" ;
-    for(int i = 0,n = item_list.size();i <n;i++){
-      cout << item_list[i]<< " ";
-    }
-    cout << "}"<<endl;
-  }
+  void print_item_list();
   //debug
-  void print_tree()override{
-    cout << node->id << ":" << node->label << " " << get_occurrence_list().size() << endl;
-    print_occurrence_list();
-    print_item_list();
-    for(int i = 0,n=children.size();i<n;i++){
-      children[i]->print_tree();
-    }
-    cout << -1 << " " << endl;
-  }
-
-  /*
-    @brief 子孫のitem_listをvectorにまとめて返す
-   */
-  vector<vector<int>> get_item_transaction(){
-    vector<vector<int>> transaction;
-    transaction.push_back(item_list);
-    for(int i = 0,n = get_children().size() ; i < n;i++){
-      vector<vector<int>> res = ((RGTree*)get_children()[i])->get_item_transaction();
-      transaction.insert(transaction.end(),res.begin(),res.end());
-    }
-    return transaction;
-  }
-  /*
-    @brief idリストにあるノードのoccurrenceのandをとって返す
-    @param id_list
-    @param oc_list
-    @detail
-    今見ているノードのoccurrenceとはここではitem_listを指す
-   */
-  vector<int> filter_rgtree_occurrence(vector<int> id_list,vector<int> oc_list){
-    if(find(id_list.begin(),id_list.end(),node->id) == id_list.end()){
-      return oc_list;
-    }
-    vector<int> result;
-    set_intersection(item_list.begin(),item_list.end(),oc_list.begin(),oc_list.end(),back_inserter(result));
-    for(int i=0, n = get_children().size();i<n;i++){
-      vector<int> c = ((RGTree*) get_children()[i])->filter_rgtree_occurrence(id_list,result);
-      vector<int> res;
-      set_intersection(result.begin(),result.end(),c.begin(),c.end(),back_inserter(res));
-      result = res;
-    }
-    return result;
-  }
-
+  void print_tree()override;
+  vector<vector<int>> get_item_transaction();
+  vector<int> filter_rgtree_occurrence(vector<int> id_list,vector<int> oc_list);
+  vector<int> filter_rgtree_occurrence_improved(vector<int> id_list);
+  vector<RGTree*> get_all_leaves(vector<int> id_list);
 };
 
 
 
-
+bool is_child_id_included(vector<Tree*> children,vector<int> id_list);
 vector<string> split(const string &s, char delim);
 Tree* make_tree(string canonical_form);
 EnumerationTree* gen_enumeration_tree(Tree *tree,EnumerationTree *parent,vector<Tree*> occ_list);

@@ -68,6 +68,11 @@ void set_initial_memory(){
   getrusage(who,&usage);
   INITIAL_MEMORY = usage.ru_maxrss;
   CURRENT_MEMORY = 0;
+
+}
+
+void reset_current_memory(){
+  CURRENT_MEMORY = 0;
 }
 
 void set_current_memory(){
@@ -75,8 +80,8 @@ void set_current_memory(){
   if(usage.ru_maxrss > CURRENT_MEMORY){
     CURRENT_MEMORY = usage.ru_maxrss;
   }
-  cout << "init memory : " << INITIAL_MEMORY << endl;
-  cout << "current memory:" << CURRENT_MEMORY  << endl;
+  //  cout << "init memory : " << INITIAL_MEMORY << endl;
+  //  cout << "current memory:" << CURRENT_MEMORY  << endl;
 }
 
 int get_memory_usage(){return CURRENT_MEMORY - INITIAL_MEMORY;}

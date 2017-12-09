@@ -11,8 +11,8 @@ double LCM_TIME; // LCMは何度も呼ばれるからそれにかかった時間
 //
 int who;
 struct rusage usage;
-int CURRENT_MEMORY;
-int INITIAL_MEMORY;
+unsigned long CURRENT_MEMORY;
+unsigned long INITIAL_MEMORY;
 
 //
 int NUM_OF_ROOT_CANDIDATE;
@@ -80,11 +80,11 @@ void set_current_memory(){
   if(usage.ru_maxrss > CURRENT_MEMORY){
     CURRENT_MEMORY = usage.ru_maxrss;
   }
-  //  cout << "init memory : " << INITIAL_MEMORY << endl;
-  //  cout << "current memory:" << CURRENT_MEMORY  << endl;
+  cout << "init memory : " << INITIAL_MEMORY << endl;
+  cout << "current memory:" << CURRENT_MEMORY  << endl;
 }
 
-int get_memory_usage(){return CURRENT_MEMORY - INITIAL_MEMORY;}
+unsigned long get_memory_usage(){return CURRENT_MEMORY - INITIAL_MEMORY;}
 double get_LCM_time(){return LCM_TIME;}
 double get_algorithm_time(){return GENERAL_TIME;}
 int get_num_of_root_candidate(){return NUM_OF_ROOT_CANDIDATE;}

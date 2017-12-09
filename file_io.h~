@@ -23,10 +23,12 @@ struct CP{
 void write_file_to_item_transactions(vector<vector<int>> transactions);
 vector<string> read_tree_db();
 vector<vector<int>> read_result_of_lcm();
-vector<CP*> read_CP_from_LCM_ver2_result(RGTree* rgtree);
+vector<vector<int>> read_from_LCM_ver2_result();
 vector<CP*> read_CP_from_LCM_result();
+vector<CP*> convert_to_CP(vector<vector<int>>id_lists,RGTree* rgtree);
 void write_final_result(vector<EnumerationTree*> ets ,string filename);
 vector<string> read_cslogs();
+vector<string> read_tree_file(string filename);
 string to_csstr(vector<string> sv);
 vector<vector<int>> convert(vector<vector<int>> vvi);
 TreeDB* get_treedb_from_file(string filename);

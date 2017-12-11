@@ -109,12 +109,16 @@ vector<vector<int>> read_from_LCM_ver2_result(){
   return id_lists;
 }
 
-vector<CP*> convert_to_CP(vector<vector<int>> id_lists,RGTree* rgtree){
+vector<CP*> convert_to_CP(vector<vector<int>> id_lists,RGTree* rgtree,bool is_memred){
   vector<CP*> result;
   for(int i = 0 , n = id_lists.size();i<n;i++){
     //vector<int> occ = rgtree->filter_rgtree_occurrence(id_lists[i],rgtree->item_list);
-    vector<int> occ = rgtree->filter_rgtree_occurrence_improved(id_lists[i]);
-
+    vector<int> occ;
+    if(is_memred){
+      occ = rgtree->filter_rgtree_occurrence_memory_improved(id_lists[i]);
+    }else{
+      occ = rgtree->filter_rgtree_occurrence_improved(id_lists[i]);
+    }
     //cout << "convert_to_CP  " << i <<" / " << n <<"   occ size is "<<occ.size()<< endl;
     result.push_back(new CP(id_lists[i],occ));
   }

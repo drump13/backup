@@ -25,7 +25,7 @@ vector<string> read_tree_db();
 vector<vector<int>> read_result_of_lcm();
 vector<vector<int>> read_from_LCM_ver2_result();
 vector<CP*> read_CP_from_LCM_result();
-vector<CP*> convert_to_CP(vector<vector<int>>id_lists,RGTree* rgtree);
+vector<CP*> convert_to_CP(vector<vector<int>>id_lists,RGTree* rgtree,bool is_memred);
 void write_final_result(vector<EnumerationTree*> ets ,string filename);
 void write_experiment_time_result(string filename,vector<int> minsup_list,vector<double> timelist);
 void write_experiment_memory_result(string filename,vector<int> minsup_list,vector<int> memroylist);

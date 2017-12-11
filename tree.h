@@ -99,20 +99,6 @@ private:
 	vector<Tree*> treedb;
 };
 
-/*
-RGTreeクラス
-通常のノードとは違い，Occurencelistを持つノードによって作られる木
-
-
-class RGTree{
-public:
-	RGTree(RGNode* rgnode);
-	void add_node(RGNode *parent,RGNode *node);
-	void print_rgtree();
-private:
-	RGNode *root;
-};
-*/
 
 
 /*
@@ -202,7 +188,10 @@ struct Path_OCCL{
 };
 
 
-
+/*
+SCC_Minerによって呼ばれる
+解の根の列挙するのに用いられる
+ */
 class RPTree : public EnumerationTree{
 public:
   vector<int> item_list;
@@ -217,20 +206,28 @@ public:
 };
 
 
-
+/*
+SCC_Minerによって呼ばれる
+これをアイテムセット列挙問題に還元しLCMをかける
+ */
 class RGTree : public EnumerationTree{
 public:
   RGTree(RPTree* rp_tree);
   RGTree(int label,vector<Tree*> occ_list,vector<int> item_list);
+  RGTree(int label, vector<int> item_list);
   vector<int> item_list;
   //debug
   void print_item_list();
   //debug
   void print_tree()override;
   vector<vector<int>> get_item_transaction();
+  vector<vector<int>> get_item_transaction_memred();
   vector<int> filter_rgtree_occurrence(vector<int> id_list,vector<int> oc_list);
   vector<int> filter_rgtree_occurrence_improved(vector<int> id_list);
+  vector<int> filter_rgtree_occurrence_memory_improved(vector<int> id_list);
   vector<RGTree*> get_all_leaves(vector<int> id_list);
+  vector<int> get_item_list_memred();
+  vector<Tree*> get_occurrence_list_memred();
 };
 
 
@@ -243,4 +240,5 @@ vector<int> get_correspond_index_list(vector<Tree*> current_list,vector<Tree*> r
 //debug
 void print_tree_vector(vector<Tree*> tree_vec);
 void print_vv(vector<vector<int>> vv);
+void print_vec(vector<int> vec);
 #endif //TREE

@@ -811,14 +811,68 @@ vector<int> RGTree::filter_rgtree_occurrence(vector<int> id_list,vector<int> oc_
   return result;
 }
 
+/*
+  @brief idリストにあるノードのoccurrenceのandをとって返す
+  @param id_list : 解に含まれるRGTree中のノードidのリスト
+  @param oc_list
+  @detail
+  今見ているノードのoccurrenceとはここではitem_listを指す
+ */
+vector<int> RGTree::filter_rgtree_occurrence_improved(vector<int> id_list){
+  vector<RGTree*> all_leaves = get_all_leaves(id_list);
+  //  cout << "all_leaves size is " << all_leaves.size() << endl;
+  vector<int> result=all_leaves[0]->item_list;
+  for(int i =1,n=all_leaves.size();i<n;i++){
+    vector<int> occ = all_leaves[i]->item_list;
+    vector<int> res;
+    set_intersection(result.begin(),result.end(),occ.begin(),occ.end(),back_inserter(res));
+    result = res;
+  }
+  return result;
+}
 
-
+/*
+  @brief 今見ているid_listの葉ノードをすべて取ってくる
+ @param id_list
+ */
+vector<RGTree*> RGTree::get_all_leaves(vector<int> id_list){
+  vector<RGTree*> res;
+  if(!is_child_id_included(children,id_list)){
+    res.push_back(this);
+    return res;
+  }
+  vector<RGTree*> cur_children;
+  for(Tree* c : children){cur_children.push_back((RGTree*) c);}
+ 
+  for(RGTree* chd : cur_children){
+    if(find(id_list.begin(),id_list.end(),chd->get_node()->id) == id_list.end()){
+      continue;
+    }
+    vector<RGTree*> c = chd->get_all_leaves(id_list);
+    res.insert(res.end(),c.begin(),c.end());
+  }
+  return res;
+} 
 
 
 /***************************************
 以下静的お便利メソッドの実装
 ****************************************/
-
+/*
+@brief 木のリストに，idlistに含まれるidを持つものが存在するかどうか
+@param children: tree list
+@param id_list
+@sa get_all_leaves
+@return 含まれていればtrueを返す
+ */
+bool is_child_id_included(vector<Tree*> children,vector<int> id_list){
+  for(Tree* c :children){
+    if(find(id_list.begin(),id_list.end(),c->get_node()->id) !=id_list.end()){
+      return true;
+    }
+  }
+  return false;
+}
 
 vector<string> split(const string &s, char delim) {
   vector<string> elems;
@@ -895,6 +949,7 @@ vector<int> get_correspond_index_list(vector<Tree*> current,vector<Tree*> root_o
   return result;
 }
 
+//@debug
 void print_tree_vector(vector<Tree*> tree_vec){
   for(int i = 0,n = tree_vec.size();i<n;i++){
     if(tree_vec[i] == NULL){
@@ -907,6 +962,7 @@ void print_tree_vector(vector<Tree*> tree_vec){
   }
 }
 
+//@debug
 void print_vv(vector<vector<int>>vv){
     for(int i = 0 , n = vv.size();i<n;i++){
       cout << "{"; 

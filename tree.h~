@@ -229,11 +229,13 @@ public:
   void print_tree()override;
   vector<vector<int>> get_item_transaction();
   vector<int> filter_rgtree_occurrence(vector<int> id_list,vector<int> oc_list);
+  vector<int> filter_rgtree_occurrence_improved(vector<int> id_list);
+  vector<RGTree*> get_all_leaves(vector<int> id_list);
 };
 
 
 
-
+bool is_child_id_included(vector<Tree*> children,vector<int> id_list);
 vector<string> split(const string &s, char delim);
 Tree* make_tree(string canonical_form);
 EnumerationTree* gen_enumeration_tree(Tree *tree,EnumerationTree *parent,vector<Tree*> occ_list);

@@ -391,12 +391,21 @@ vector<RPRGPathItem*> enum_rprg_item_list(vector<Path_OCCL*> poc_list,int min_su
 @param t1 木1
 @param t2 木2
 @return 木1と木2の位置が等しい(同じ場所を参照している)ならばtrueそうでなければfalse
-@sa is_occurrence_included()//todo
+@sa is_occurrence_included()
 @detail
 */
 bool is_same_occurrence(Tree* t1,Tree* t2){
   return (t1->get_tree_id() == t2->get_tree_id() &&
 	  t1->get_node()->id == t2->get_node()->id);
+}
+
+/*
+@brief 2つの木が渡されて，t1の位置がt2よりも進んでしまっているときtrue
+@sa is_occurrence_included()
+ */
+bool is_occurrence_exceeded(Tree* t1,Tree* t2){
+  return (t1->get_tree_id() > t2->get_tree_id()) ||
+    ((t1->get_tree_id() == t2->get_tree_id()) & (t1->get_node()->id > t2->get_node()->id));
 }
 
 
@@ -412,6 +421,10 @@ bool is_included(vector<Tree*> occs1,vector<Tree*> occs2){
  int current_occurrence_list1_pointer = 0;
  int oc1_size = occs1.size();
  for(int i =0,n = occs2.size();i<n;i++){
+
+   if(is_occurrence_exceeded(occs2[i],occs1[current_occurrence_list1_pointer])){
+     return false;
+   }
    if(is_same_occurrence(occs1[current_occurrence_list1_pointer],occs2[i] )){
      current_occurrence_list1_pointer++;
    }
@@ -454,8 +467,9 @@ bool is_exist_occurrence_included(RPTree* rptree,RPTree* rptree_checks){
   if(rptree->get_occurrence_list().size() > rptree_checks->get_occurrence_list().size()){
     return false;
   }
-
+  //  cout << "before is_included" << endl;
   bool r = is_included(rptree->get_occurrence_list(),rptree_checks->get_occurrence_list());
+  //cout << "after is_included" << endl;
   if(r){return r;}
   for(int i = 0,n = rptree_checks->get_children().size(); i < n;i++){
     r = r || is_exist_occurrence_included(rptree,(RPTree*)rptree_checks->get_children()[i]);
@@ -517,7 +531,9 @@ vector<RPTree*> get_root_candidates(RPTree* rptree,RPTree* rproot,bool is_improv
  */
 void rp_tree_cutter(RPTree* rptree,RPTree* rproot){
   if(is_exist_occurrence_included(rptree,rproot)){
+    //cout << "before rmdec" << endl;
     rptree->rm_dec();
+    //cout << "after rmdec " << endl;
     return;
   }
   for(int i = 0, n = rptree->get_children().size();i<n;i++){
@@ -527,6 +543,7 @@ void rp_tree_cutter(RPTree* rptree,RPTree* rproot){
       n = rptree->get_children().size();
     }
     rp_tree_cutter((RPTree*)rptree->get_children()[i],rproot);
+    //    n = rptree->get_children().size();
   }
 }
 
@@ -680,7 +697,16 @@ vector<EnumerationTree*> SCC_Miner(TreeDB* db,EnumerationTree* constrainedTree, 
   RPTree* rp_tree = new RPTree(constrainedTree->get_node()->label,oc_list);
   exp_rp_tree(rp_tree,minimum_support);
   rp_tree->reindexing(0);
-  vector<RPTree*> root_candidates = get_root_candidates(rp_tree,rp_tree,rpcut_flag);
+  //vector<RPTree*> root_candidates = get_root_candidates(rp_tree,rp_tree,false);
+  //  cout << "RPTree size before cut is " << rp_tree->get_num_of_nodes() << endl;
+  //cout << "root candidates size before cut is " << root_candidates.size() << endl;
+  if(rpcut_flag){ 
+    rp_tree_cutter(rp_tree,rp_tree);
+    rp_tree->reindexing(0);
+  }
+  vector<RPTree*> root_candidates = get_root_candidates(rp_tree,rp_tree,false);
+  //cout << "RPTree size after cut is " << rp_tree->get_num_of_nodes() << endl;
+  //cout << "root candidates size after cut is " << root_candidates.size() << endl;
   set_num_of_root_candidate(root_candidates.size());
   //generate rg_tree
   for(int i = 0,n = root_candidates.size() ; i < n ; i++){

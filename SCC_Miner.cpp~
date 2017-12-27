@@ -268,7 +268,7 @@ void exp_rp_tree(RPTree* rp_tree,int min_sup){
   }
 }
 /*
-@brief 
+@brief RGTreeを再帰的に拡張していく
 @param rg_tree : root_candidate中の1ノード
 @param min_sup : ミニマムサポート
 @return
@@ -303,6 +303,62 @@ void exp_rg_tree(RGTree* rg_tree,int min_sup){
       rg_tree->add_child(rg_child);
       exp_rg_tree(rg_child,min_sup);
     }
+  }
+
+}
+
+
+/*
+@brief RGTreeを再帰的に拡張していく
+@param rg_tree : root_candidate中の1ノード
+@param min_sup : ミニマムサポート
+@return
+@sa exp_rp_tree
+@detail
+rg-tree->occurrence_list の子ノードのラベルを再帰的にまとめ上げていく,目盛り節約バージョン
+*/
+void exp_rg_tree_memred(RGTree* rg_tree,int min_sup,vector<Tree*> real_occs){
+  //ラベルマップを作成，ラベルを渡すとoc_listを返す連想配列
+  vector<int> items = rg_tree->get_item_list_memred();
+  //cout <<"items size is " <<  items.size() << "  label is " <<rg_tree->get_node()->label << endl;
+  //  vector<Tree*> oc_list = rg_tree->get_occurrence_list_memred();
+  map<int,vector<int>> label_map;
+  map<int,vector<Tree*>> label_occ_map;
+  for(int i = 0,n = real_occs.size();i<n;i++){
+    for(int j = 0 , m = real_occs[i]->get_children().size(); j < m;j++){
+      int l = real_occs[i]->get_children()[j]->get_node()->label;
+      auto itr = label_map.find(l);
+      if(itr == label_map.end()){
+	vector<int> ilist;
+	ilist.push_back(items[i]);
+	label_map[l] = ilist;
+	vector<Tree*> rolist;//real occurrence list
+	rolist.push_back(real_occs[i]->get_children()[j]);
+	label_occ_map[l] = rolist;
+      }else{
+	label_map[l].push_back(items[i]);
+	label_occ_map[l].push_back(real_occs[i]->get_children()[j]);
+      }
+      
+    }
+  }
+  //頻出なアイテムリストを持つノードに対して，親との差分を抽出
+  map<int,vector<int>> real_label_map;
+  for(auto itr = label_map.begin();itr!= label_map.end();++itr){
+    if((itr->second).size() >= min_sup){
+      vector<int> v;
+      set_difference(items.begin(),items.end(),itr->second.begin(),itr->second.end(),back_inserter(v));
+      real_label_map[itr->first]=v;
+    }
+  }
+
+  //再帰的に処理
+  for(auto itr = real_label_map.begin(); itr!=real_label_map.end(); ++itr){
+    RGTree* rg_child = new RGTree(itr->first,itr->second);
+    rg_child->set_parent(rg_tree);
+    rg_tree->add_child(rg_child);
+    exp_rg_tree_memred(rg_child,min_sup,label_occ_map[itr->first]);
+    
   }
 
 }
@@ -596,6 +652,8 @@ closed_patternからocc-listを見る
    }
  }
 
+ 
+
 /*
 @brief idリストのリストを渡して，それに対応したrg-treeのocclistとのペアのリストにして返す
 @param rg_tree
@@ -628,6 +686,25 @@ vector<CP*> get_cp_list_corresponding_to_ids(RGTree* rg_tree,vector<vector<int>>
    return ne;
  }
 
+ /*
+/*
+@brief rg-treeにノードidでフィルターをかけてclosed-treeを生成
+@param rg-tree
+@param closed-pattern
+@return closed-tree(EnumerationTree)
+@detail
+根ノードだけ先に作っておいてそれを再帰的に拡張
+*/
+ /*
+ EnumerationTree* get_closed_tree_memred(RGTree* rg_tree,CP* closed_pattern){
+   EnumerationTree* ne = new EnumerationTree(rg_tree->get_node()->id,rg_tree->get_node()->label);
+   //cout << "before make_closed" << (closed_pattern->occ_list).size()<< endl;
+   make_closed_tree_rec_memred(rg_tree,closed_pattern->id_list,ne);
+   //cout << "after make_closed " << endl;
+   return ne;
+   }*/
+
+
 
 /*
 @brief C言語で書かれたLCMの呼び出し
@@ -651,21 +728,12 @@ vector<vector<int>> calling_LCM(vector<vector<int>> in,int min_sup){
 @brief C言語で書かれたLCMの呼び出し
 @sa SCC_Miner SCC_Miner_Improved
  */
-vector<CP*> callingLCM(vector<vector<int>> in ,int min_sup,RGTree* rg_tree){
+ vector<CP*> callingLCM(vector<vector<int>> in ,int min_sup,RGTree* rg_tree,bool is_memred){
  //他LCMの呼び出し，ファイル入出力は時間に入れない  
-  /*  algorithm_stop();
-  write_file_to_item_transactions(in);
-  algorithm_restart();
-  LCM_start();
-  Mine_Closed_Itemsets(min_sup);
-  algorithm_stop();
-  LCM_end();
-  vector<vector<int>> r = read_from_LCM_ver2_result();
-  algorithm_restart();*/
   vector<vector<int>> r = calling_LCM(in,min_sup);
   algorithm_stop();
   //アイテムセットのOccurrenceを取る，本来ならLCMの中でやるがOccurrenceListの取り方が分からない
-  vector<CP*> cp = convert_to_CP(r,rg_tree);
+  vector<CP*> cp = convert_to_CP(r,rg_tree,is_memred);
   algorithm_restart();
   return cp;
 }
@@ -715,7 +783,7 @@ vector<EnumerationTree*> SCC_Miner(TreeDB* db,EnumerationTree* constrainedTree, 
     rg_tree->reindexing(0);
 
     //他作LCMの呼び出し
-    vector<CP*> closed_patterns = callingLCM(convert(rg_tree->get_item_transaction()),minimum_support,rg_tree);
+    vector<CP*> closed_patterns = callingLCM(convert(rg_tree->get_item_transaction()),minimum_support,rg_tree,false);
   
     //自作LCM呼び出し
     /*    vector<vector<int>> vv =  convert(rg_tree->get_item_transaction());
@@ -740,10 +808,11 @@ vector<EnumerationTree*> SCC_Miner(TreeDB* db,EnumerationTree* constrainedTree, 
 
 
  /*
-@brief SCC-Miner-improvedアルゴリズム本体
+@brief SCC-Miner-memory_improvedアルゴリズム本体,RGTreeに親子の差分のみを残すことでメモリ削減している
 @param1 db 木のデータベースへのポインタ
 @param2 constrainedTree 部分木制約の木(ここは木リストに変更することも考えられる)
 @param3 minimum_support ミニマムサポート
+@param4 rpcut_flag rptreeの削減手法を適用するかどうか
 @return 部分木制約を満たす頻出飽和な木パターンを全て含んだvector
 @detail
 1. db中のconstrainedTreeのポインタを全部列挙する
@@ -753,27 +822,23 @@ vector<EnumerationTree*> SCC_Miner(TreeDB* db,EnumerationTree* constrainedTree, 
 5. 各RG-TreeにLCMを呼び出す
 6. 5で得られたパタンに対してrp-treeを見ながらフィルターをかける
  */
-vector<EnumerationTree*> SCC_Miner_Improved(TreeDB* db, EnumerationTree* constrainedTree, int minimum_support){
-  vector<Tree*> oc_list = db->get_subtree_list(constrainedTree);
+ vector<EnumerationTree*> SCC_Miner_Memory_Improved(TreeDB* db, EnumerationTree* constrainedTree, int minimum_support,bool rpcut_flag){
+   vector<Tree*> oc_list = db->get_subtree_list(constrainedTree);
   vector<EnumerationTree*> result;
   if(oc_list.size() < minimum_support){return result;}
   RPTree* rp_tree = new RPTree(constrainedTree->get_node()->label,oc_list);
   exp_rp_tree(rp_tree,minimum_support);
   rp_tree->reindexing(0);  
-  //  rp_tree->print_tree();
   vector<RPTree*> root_candidates = get_root_candidates(rp_tree,rp_tree,true);
-  cout << "after enumerate root_candidates"  << endl;
   rp_tree->reindexing(0);
   set_num_of_root_candidate(root_candidates.size());
   //generate rg_tree
   for(int i = 0,n = root_candidates.size() ; i < n ; i++){
     RGTree* rg_tree = new RGTree(root_candidates[i]);
-    exp_rg_tree(rg_tree,minimum_support);
+    exp_rg_tree_memred(rg_tree,minimum_support,rg_tree->get_occurrence_list());
     rg_tree->reindexing(0);
-    
     //他作LCM
-    vector<CP*> closed_patterns = callingLCM(convert(rg_tree->get_item_transaction()),minimum_support,rg_tree);
-
+    vector<CP*> closed_patterns = callingLCM(convert(rg_tree->get_item_transaction_memred()),minimum_support,rg_tree,true);
 
     //自作
     /*    vector<vector<int>> vv =  convert(rg_tree->get_item_transaction());

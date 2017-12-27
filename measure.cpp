@@ -11,6 +11,7 @@ double LCM_TIME; // LCMは何度も呼ばれるからそれにかかった時間
 //
 int who;
 struct rusage usage;
+
 unsigned long CURRENT_MEMORY;
 unsigned long INITIAL_MEMORY;
 

@@ -120,6 +120,8 @@ public:
   vector<Tree*> get_parent_occurrences();
   vector<Tree*> get_children_occurrences();
   vector<Tree*> get_occurrence_list();
+  vector<Tree*> filter_occurrence_list(vector<int> occ_id_list);
+  int get_transaction_support();
   vector<int> get_occurrence_parent_ids(int label);
   vector<int> get_occurrence_ids(int label);
   void update_occurrence_list(vector<int> list);
@@ -197,7 +199,7 @@ public:
   vector<int> item_list;
   RPTree(int label,vector<Tree*> occ_list);
   RPTree(int label, vector<Tree*> occ_list,vector<int> item_list);
-  virtual ~RPTree(){};
+  ~RPTree();
   void rm_dec();
   vector<Path_OCCL*> get_POCCL_list(vector<int> label_path);
 
@@ -213,6 +215,7 @@ SCC_Minerによって呼ばれる
 class RGTree : public EnumerationTree{
 public:
   RGTree(RPTree* rp_tree);
+  ~RGTree();
   RGTree(int label,vector<Tree*> occ_list,vector<int> item_list);
   RGTree(int label, vector<int> item_list);
   vector<int> item_list;

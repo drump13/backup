@@ -53,13 +53,13 @@ int main(){
   cout << "SCC_Miner start !!!!!" << endl;
   set_init();
   algorithm_start();
-  vector<EnumerationTree*> result = SCC_Miner(db,et,MIN_SUP,false);
+  vector<EnumerationTree*> result = SCC_Miner(db,et,MIN_SUP,false,true);
   algorithm_end();
-  vector<EnumerationTree*>().swap(result);
+  //  vector<EnumerationTree*>().swap(result);
   record(get_algorithm_time(),get_LCM_time(),get_memory_usage());
   //cout << "closed tree size is" << result.size() << endl; 
 
-  
+  /*  
   cout << "SCC_Miner_Memory_Improved start!!!!" << endl;
   set_init();
   algorithm_start();

@@ -450,6 +450,32 @@ vector<Tree*> EnumerationTree::get_children_occurrences(){
 vector<Tree*> EnumerationTree::get_occurrence_list(){
   return occurrence_list;
 }
+
+/*
+@brief そのoccurrenceのidlistを渡すことで，そのidのOccurrenceのみから成るoccurrence listを生成し返す
+ */
+vector<Tree*> EnumerationTree::filter_occurrence_list(vector<int> occ_id_list){
+  vector<Tree*> result;
+  for(int i : occ_id_list){
+    result.push_back(occurrence_list[i]);
+  }
+  return result;
+}
+
+/*
+@brief その木のtransaction based supportをoccurrence_listを見ることで返す
+ */
+int EnumerationTree::get_transaction_support(){
+  int occ_size = occurrence_list.size();
+  if(occ_size < 2){return occ_size;}
+  for(int i = 1,n = occurrence_list.size();i < n ; i++){
+    if(occurrence_list[i]->get_tree_id() == occurrence_list[i-1]->get_tree_id()){
+      occ_size--;
+    }
+  }
+  return occ_size;
+}
+
 /*
   @brief ラベルを指定して、そのラベルを持つ親を持つoccurrenceのindexを全て格納して返す
  */
@@ -676,6 +702,14 @@ RPTree::RPTree(int label,vector<Tree*> occ_list,vector<int> item_list):Enumerati
   }
 }
 
+RPTree::~RPTree(){
+  for(Tree* c : children){
+    if(c!=NULL){
+      delete c;
+    }
+  }
+}
+
 /*
   @brief このノード以下の木を削除
   @return
@@ -738,6 +772,14 @@ RGTree::RGTree(int label, vector<Tree*> occ_list,vector<int> item_list):Enumerat
 
 RGTree::RGTree(int label,vector<int> item_list):EnumerationTree(0,label){
   this->item_list = item_list;
+}
+
+RGTree::~RGTree(){
+  for(Tree* c : children){
+    if(c != NULL){
+      delete c;
+    }
+  }
 }
 
 //debug

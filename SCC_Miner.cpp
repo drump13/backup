@@ -320,7 +320,7 @@ rg-tree->occurrence_list の子ノードのラベルを再帰的にまとめ上�
 void exp_rg_tree_memred(RGTree* rg_tree,int min_sup,vector<Tree*> real_occs){
   //ラベルマップを作成，ラベルを渡すとoc_listを返す連想配列
   vector<int> items = rg_tree->get_item_list_memred();
-  cout <<"items size is " <<  items.size() << "  label is " <<rg_tree->get_node()->label << endl;
+  //cout <<"items size is " <<  items.size() << "  label is " <<rg_tree->get_node()->label << endl;
   //  vector<Tree*> oc_list = rg_tree->get_occurrence_list_memred();
   map<int,vector<int>> label_map;
   map<int,vector<Tree*>> label_occ_map;
@@ -730,15 +730,6 @@ vector<vector<int>> calling_LCM(vector<vector<int>> in,int min_sup){
  */
  vector<CP*> callingLCM(vector<vector<int>> in ,int min_sup,RGTree* rg_tree,bool is_memred){
  //他LCMの呼び出し，ファイル入出力は時間に入れない  
-  /*  algorithm_stop();
-  write_file_to_item_transactions(in);
-  algorithm_restart();
-  LCM_start();
-  Mine_Closed_Itemsets(min_sup);
-  algorithm_stop();
-  LCM_end();
-  vector<vector<int>> r = read_from_LCM_ver2_result();
-  algorithm_restart();*/
   vector<vector<int>> r = calling_LCM(in,min_sup);
   algorithm_stop();
   //アイテムセットのOccurrenceを取る，本来ならLCMの中でやるがOccurrenceListの取り方が分からない
@@ -747,6 +738,59 @@ vector<vector<int>> calling_LCM(vector<vector<int>> in,int min_sup){
   return cp;
 }
 
+/*
+@brief occ_listからtransaction_based_supportを計算し，返す
+@detail
+occ_listの中はtree_id順に並んでいるという前提
+ */
+int get_transaction_based_support(vector<Tree*> occ_list){
+  int occ_size = occ_list.size();
+  if(occ_size < 2){return occ_size;}
+  for(int i = 1,n = occ_list.size(); i < n ; i++){
+    if(occ_list[i] ->get_tree_id() == occ_list[i-1]->get_tree_id()){
+      occ_size--;
+    }
+  }
+  return occ_size;
+}
+
+/*
+@brief 引数に渡したcがトランザクションサポートでも飽和かどうか判定
+@param cp_list
+@param c
+@param rptree
+@return 飽和ならtrueそうでなければfalse
+
+ */
+bool is_closed_in_transaction_based_support(vector<CP*> cp_list,CP* c,RPTree* rp){
+  vector<Tree*> cp_occ_list = rp->filter_occurrence_list(c->occ_list);
+  for(CP* r : cp_list){
+    vector<Tree*> r_occ_list = rp->filter_occurrence_list(r->occ_list);  
+    if(c!=r &
+       is_included(r_occ_list,cp_occ_list) &
+	get_transaction_based_support(cp_occ_list) == get_transaction_based_support(r_occ_list)){
+      cout <<"trsupport is "<< get_transaction_based_support(cp_occ_list) << " " << get_transaction_based_support(r_occ_list) << endl;
+      	return false;
+      }   
+  }
+  return true;
+}
+
+/*
+@brief CP*のリストにtransaction basedでclosedじゃないものを削除
+@param cp_list
+@param rptree
+@detail
+ */
+vector<CP*> filter_closed_pattern_with_tclosed(vector<CP*> cp_list,RPTree* rptree){
+  vector<CP*> result;
+  for(CP* cp : cp_list){
+    if(is_closed_in_transaction_based_support(cp_list,cp,rptree)){
+      result.push_back(cp);
+    }
+  }
+  return result;
+}
 
 
 
@@ -756,6 +800,7 @@ vector<vector<int>> calling_LCM(vector<vector<int>> in,int min_sup){
 @param2 constrainedTree 部分木制約の木(ここは木リストに変更することも考えられる)
 @param3 minimum_support ミニマムサポート
 @param4 rpcut_flag RPTreeを削減するかどうか
+@param5 is_trsact_based trueならばtransaction based support falseならばoccurrence based support
 @return 部分木制約を満たす頻出飽和な木パターンを全て含んだvector
 @detail
 1. db中のconstrainedTreeのポインタを全部列挙する
@@ -765,7 +810,7 @@ vector<vector<int>> calling_LCM(vector<vector<int>> in,int min_sup){
 5. 各RG-TreeにLCMを呼び出す
 6. 5で得られたパタンに対してrp-treeを見ながらフィルターをかける
  */
-vector<EnumerationTree*> SCC_Miner(TreeDB* db,EnumerationTree* constrainedTree, int minimum_support,bool rpcut_flag){
+vector<EnumerationTree*> SCC_Miner(TreeDB* db,EnumerationTree* constrainedTree, int minimum_support,bool rpcut_flag,bool is_trsact_based){
   vector<Tree*> oc_list = db->get_subtree_list(constrainedTree);
   
   vector<EnumerationTree*> result;
@@ -792,7 +837,7 @@ vector<EnumerationTree*> SCC_Miner(TreeDB* db,EnumerationTree* constrainedTree, 
     rg_tree->reindexing(0);
 
     //他作LCMの呼び出し
-    vector<CP*> closed_patterns = callingLCM(convert(rg_tree->get_item_transaction()),minimum_support,rg_tree,false);
+    vector<CP*> cp,closed_patterns = callingLCM(convert(rg_tree->get_item_transaction()),minimum_support,rg_tree,false);
   
     //自作LCM呼び出し
     /*    vector<vector<int>> vv =  convert(rg_tree->get_item_transaction());
@@ -800,12 +845,18 @@ vector<EnumerationTree*> SCC_Miner(TreeDB* db,EnumerationTree* constrainedTree, 
     vector<CP*> closed_patterns = get_cp_list_corresponding_to_ids(rg_tree,id_lists);    */
     
     for(int j = 0 , m = closed_patterns.size();j<m;j++){
-      //cout << "is_there_occ_matched " << j << "  root_c size is" << n<< endl;
       if(!is_there_occurrence_matched(root_candidates[i],closed_patterns[j])){
-	//	cout << "closed !!" << endl;
-	result.push_back(get_closed_tree(rg_tree,closed_patterns[j]));
+	//result.push_back(get_closed_tree(rg_tree,closed_patterns[j]));
+	cp.push_back(closed_patterns[j]);
       }
     }
+    cout << "cp size is " << cp.size() << endl; 
+    if(is_trsact_based){
+      cp =  filter_closed_pattern_with_tclosed(cp,root_candidates[i]);
+    }
+    cout << "cp size is " << cp.size() << endl; 
+    for(CP* c : cp){result.push_back(get_closed_tree(rg_tree,c));}
+
     set_current_memory();
     delete rg_tree;
 

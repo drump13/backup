@@ -564,28 +564,6 @@ void EnumerationTree::print_occurrence_list(){
 
 
 
-
-
-
-/*************************
-Attribute Treeクラス
-Treeのサブクラス
-treeと同じインタフェースで同じラベルを持つ子供を排除した状態で持つ
- ************************/
-// class AttributeTree : public Tree{
-// public:
-//   AttributeTree(string s);
-// private:
-  
-
-// };
-
-// AttributeTree::AttributeTree(String s ):Tree(s){
-  
-
-// }
-
-
 /*****************************************
 Treeクラスを持ったTreeDBクラス，
 各アルゴリズムとはこのクラスと直接やり取りする事になる
@@ -698,6 +676,14 @@ RPTree::RPTree(int label,vector<Tree*> occ_list,vector<int> item_list):Enumerati
   }
 }
 
+RPTree::~RPTree(){
+  for(Tree* c : children){
+    if(c!=NULL){
+      delete c;
+    }
+  }
+}
+
 /*
   @brief このノード以下の木を削除
   @return
@@ -757,6 +743,19 @@ RGTree::RGTree(RPTree* rp_tree):EnumerationTree(0,rp_tree->get_node()->label,rp_
 RGTree::RGTree(int label, vector<Tree*> occ_list,vector<int> item_list):EnumerationTree(0,label,occ_list){
   this->item_list = item_list;
 }
+
+RGTree::RGTree(int label,vector<int> item_list):EnumerationTree(0,label){
+  this->item_list = item_list;
+}
+
+RGTree::~RGTree(){
+  for(Tree* c : children){
+    if(c != NULL){
+      delete c;
+    }
+  }
+}
+
 //debug
 void RGTree::print_item_list(){
   cout <<"size:" << item_list.size()<< " {" ;
@@ -784,6 +783,17 @@ vector<vector<int>> RGTree::get_item_transaction(){
   transaction.push_back(item_list);
   for(int i = 0,n = get_children().size() ; i < n;i++){
     vector<vector<int>> res = ((RGTree*)get_children()[i])->get_item_transaction();
+    transaction.insert(transaction.end(),res.begin(),res.end());
+  }
+  return transaction;
+}
+
+vector<vector<int>> RGTree::get_item_transaction_memred(){
+  vector<vector<int>> transaction;
+  transaction.push_back(get_item_list_memred());
+  vector<Tree*> cs = get_children();
+  for(int i = 0 , n = cs.size();i<n;i++){
+    vector<vector<int>> res = ((RGTree*) cs[i])->get_item_transaction_memred();
     transaction.insert(transaction.end(),res.begin(),res.end());
   }
   return transaction;
@@ -830,6 +840,23 @@ vector<int> RGTree::filter_rgtree_occurrence_improved(vector<int> id_list){
   }
   return result;
 }
+/*
+@brief メモリ削減したように書き直した
+@sa filter_rgtree_occurrence_improved
+ */
+ vector<int> RGTree::filter_rgtree_occurrence_memory_improved(vector<int> id_list){
+  vector<RGTree*> all_leaves = get_all_leaves(id_list);
+  //  cout << "all_leaves size is " << all_leaves.size() << endl;
+  vector<int> result=all_leaves[0]->get_item_list_memred();
+  for(int i =1,n=all_leaves.size();i<n;i++){
+    vector<int> occ = all_leaves[i]->get_item_list_memred();
+    vector<int> res;
+    set_intersection(result.begin(),result.end(),occ.begin(),occ.end(),back_inserter(res));
+    result = res;
+  }
+  return result;
+
+}
 
 /*
   @brief 今見ているid_listの葉ノードをすべて取ってくる
@@ -853,6 +880,46 @@ vector<RGTree*> RGTree::get_all_leaves(vector<int> id_list){
   }
   return res;
 } 
+
+/*
+  @brief RGTreeのアイテムリスト(occ_listのindex)を取る
+  @detail メモリ節約のため，出現リストの親との差分だけ保持，取る際は根からフィルタをかけながら取る
+ */
+vector<int> RGTree::get_item_list_memred(){
+  //if(this->get_parent() == NULL){return item_list;}
+  RGTree* t = this;
+  vector<int> root_items,to_remove;
+  while(t != NULL){
+    if(t->get_parent() == NULL){
+      for(int i = 0, n = t->item_list.size();i < n;i++){
+	//	cout << "t->itemlist size in for is " << t->item_list.size() << endl;
+	root_items.push_back(t->item_list[i]);
+      }
+      break;
+    }else{
+      for(int i = 0 , n = t->item_list.size();i<n;i++){
+	to_remove.push_back(t->item_list[i]);
+      }
+    }
+    t = (RGTree*) t->get_parent();
+  }
+  vector<int> r;
+  set_difference(root_items.begin(),root_items.end(),to_remove.begin(),to_remove.end(),back_inserter(r));
+  return r;
+}
+/*
+  @brief RGTreeのoccurrence_listを取る
+  @detail メモリ節約のため，出現リストの親との差分だけ保持，取る際は根からフィルタをかけながら取る
+*/
+vector<Tree*> RGTree::get_occurrence_list_memred(){
+  RGTree* root = (RGTree*) this->get_root();
+  vector<int> items = get_item_list_memred();
+  vector<Tree*> occs;
+  for(int i = 0 ,n = items.size();i<n;i++){
+    occs.push_back(root->get_occurrence_list()[items[i]]);
+  }
+  return occs;
+}
 
 
 /***************************************
@@ -964,11 +1031,16 @@ void print_tree_vector(vector<Tree*> tree_vec){
 
 //@debug
 void print_vv(vector<vector<int>>vv){
-    for(int i = 0 , n = vv.size();i<n;i++){
-      cout << "{"; 
-      for(int j = 0,m = vv[i].size();j<m;j++){
-	cout << vv[i][j] << ",";
-      }
-      cout << "}"<<endl;
-    }
+  for(int i = 0 , n = vv.size();i<n;i++){
+    print_vec(vv[i]);
   }
+}
+
+//debug
+void print_vec(vector<int> vec){
+  cout << "{";
+  for(int i = 0 , n = vec.size(); i < n ; i++){
+    cout << vec[i] << ",";
+  }
+  cout << "}" << endl;
+}

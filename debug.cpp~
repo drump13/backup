@@ -45,7 +45,7 @@ int main(){
   vector<Tree*> trees = db->get_subtree_list(subtree);
   EnumerationTree* et = gen_enumeration_tree(subtree,NULL,trees); 
 
-  vector<EnumerationTree*> result = SCC_Miner(db,et,MIN_SUP);
+  // vector<EnumerationTree*> result = SCC_Miner(db,et,MIN_SUP,false);
 
   vector<int> root_c_list;
 
@@ -53,28 +53,28 @@ int main(){
   cout << "SCC_Miner start !!!!!" << endl;
   set_init();
   algorithm_start();
-  result = SCC_Miner(db,et,MIN_SUP);
+  vector<EnumerationTree*> result = SCC_Miner(db,et,MIN_SUP,false);
   algorithm_end();
   vector<EnumerationTree*>().swap(result);
   record(get_algorithm_time(),get_LCM_time(),get_memory_usage());
   //cout << "closed tree size is" << result.size() << endl; 
 
   
-  cout << "SCC_Miner_Improved start!!!!" << endl;
+  cout << "SCC_Miner_Memory_Improved start!!!!" << endl;
   set_init();
   algorithm_start();
-  result = SCC_Miner_Improved(db,et,MIN_SUP);
+  result = SCC_Miner_Memory_Improved(db,et,MIN_SUP,true);
   algorithm_end();
-  vector<EnumerationTree*>().swap(result);
+  //vector<EnumerationTree*>().swap(result);
   record(get_algorithm_time(),get_LCM_time(),get_memory_usage());
   //  cout << "closed tree size is" << result.size() << endl; 
-
+  /*
   set_init();
   algorithm_start();
-  result = SCC_Path_Miner(db,et,MIN_SUP);
+  result = SCC_Path_Miner(db,et,MIN_SUP,true);
   algorithm_end();
   record(get_algorithm_time(),get_LCM_time(),get_memory_usage());
-
+  */
   // cout << "closed tree size is " << result.size() << endl;
   for(int i = 0 , n = result.size() ; i<n; i++){
     cout << result[i]->get_tree_string() << endl;
